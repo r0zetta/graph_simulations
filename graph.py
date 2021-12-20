@@ -137,7 +137,7 @@ class Graph():
 
     def make_graph(self):
         # Create a starting core network
-        print("Creating core network with " + str(self.num_cores) + " cores.")
+        #print("Creating core network with " + str(self.num_cores) + " cores.")
         cores = {}
         ci = 0
         for cn in range(self.num_cores):
@@ -149,7 +149,10 @@ class Graph():
                 max_connections = int(sn * self.intra_core_connectivity)
                 if max_connections > 0:
                     num_connections = random.randint(1, max_connections)
-                    connections = random.sample(range(ci, sn+ci), num_connections)
+                    if sn > 0 and sn >= num_connections:
+                        connections = random.sample(range(ci, sn+ci), num_connections)
+                    else:
+                        connections = [ci]
                     for target in connections:
                         self.add_edge(source, target)
             ci += sn
@@ -172,29 +175,29 @@ class Graph():
                     ci += 1
 
         # Add further nodes to existing graph
-        print("Adding extra nodes by popularity")
+        #print("Adding extra nodes by popularity")
         for nodeid in range(int(self.num_nodes * self.add_nodes_popularity)):
             self.connect_node_popularity(nodeid)
 
-        print("Adding extra nodes by random selection")
+        #print("Adding extra nodes by random selection")
         for nodeid in range(int(self.num_nodes * self.add_nodes_random)):
             self.connect_node_random(nodeid)
 
         # Add extra connections between nearby existing nodes
-        print("Adding extra connections fron existing nodes to their second neighbours")
+        #print("Adding extra connections fron existing nodes to their second neighbours")
         for _ in range(int(self.num_nodes * self.connect_second_neighbours)):
             nodeid = random.choice(range(self.num_nodes))
             self.connect_node_second_neighbour(nodeid)
 
         # Add extra connections between random nodes
-        print("Adding extra connections fron existing nodes random other nodes")
+        #print("Adding extra connections fron existing nodes random other nodes")
         for _ in range(int(self.num_nodes * self.connect_random)):
             nodeid = random.choice(range(self.num_nodes))
             self.connect_node_random(nodeid)
 
-        print("Making nx graph")
+        #print("Making nx graph")
         self.make_nx_graph()
-        print("Getting communities")
+        #print("Getting communities")
         self.make_communities()
 
     # These are used when writing the gexf file
@@ -217,6 +220,12 @@ class Graph():
             self.clusters[mod].append(node)
         # Set community labels for gexf output
         self.set_node_desc("community", "integer", nd)
+
+    def get_community_dist(self):
+        dist = Counter()
+        for ci, cn in self.clusters.items():
+            dist[len(cn)] += 1
+        return dist
 
     def print_community_stats(self, num=5):
         for cluster_index, cluster_nodes in self.clusters.items():
