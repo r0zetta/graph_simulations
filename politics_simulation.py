@@ -77,9 +77,9 @@ def alter_voting_intention(voting_intention, magnitude):
         if name not in to_alter:
             ret[name] = vi
             continue
-        if vi > resistance_threshold:
+        if solid_voters == True and vi > resistance_threshold:
             ret[name] = vi
-        elif vi < -1 * resistance_threshold:
+        elif solid_voters == True and vi < -1 * resistance_threshold:
             ret[name] = vi
         else:
             ret[name] = max(-1*rt, min(1*rt, vi + mag))
@@ -89,9 +89,10 @@ def propagate_voting_intention(graph, voting_intention):
     ret = {}
     rt = resistance_threshold*0.99
     for nodeid, vi in voting_intention.items():
-        if vi > resistance_threshold or vi < -1 * resistance_threshold:
-            ret[nodeid] = vi
-            continue
+        if solid_voters == True:
+            if vi > resistance_threshold or vi < -1 * resistance_threshold:
+                ret[nodeid] = vi
+                continue
         neighbours = graph.get_incoming_weights(nodeid)
         outgoing = graph.get_outgoing_weights(nodeid)
         for item in outgoing:
@@ -114,6 +115,18 @@ def propagate_voting_intention(graph, voting_intention):
         ret[nodeid] = max(-1*rt, min(1*rt, vi + change))
     return ret
 
+num_nodes=1000
+num_cores=1
+intra_core_connectivity=0.3
+core_connectivity=0.7
+add_nodes_random=0.4
+add_nodes_popularity=1.4
+connect_cores_directly=0.2
+connect_second_neighbours=1.5
+move_nodes_second_neighbour=0.5
+connect_random=0.4
+
+solid_voters = False
 voting_threshold = 0.7
 resistance_threshold = 0.95
 neighbour_influence = 0.2
@@ -123,19 +136,11 @@ scandal_effect = 0.75
 scandal_max_chance = 0.75
 scandal_population_affected=0.3
 waver = 0.5
-move_nodes = 1
+move_nodes = int(num_nodes * 0.005)
 move_every = 25
+change_weights = int(num_nodes * 0.01)
+change_every = 50
 num_steps = 10000
-
-num_nodes=1000
-num_cores=1
-intra_core_connectivity=0.3
-core_connectivity=0.7
-add_nodes_random=0.4
-add_nodes_popularity=1.4
-connect_cores_directly=0.2
-connect_second_neighbours=1.5
-connect_random=0.4
 
 save_every=500
 
@@ -148,6 +153,7 @@ graph = Graph(num_nodes=num_nodes,
               add_nodes_popularity=add_nodes_popularity,
               connect_cores_directly=connect_cores_directly,
               connect_second_neighbours=connect_second_neighbours,
+              move_nodes_second_neighbour=move_nodes_second_neighbour,
               connect_random=connect_random)
 graph.save_graph_csv("graph.csv")
 graph.print_community_stats()
@@ -183,11 +189,8 @@ for cluster_index, cluster_nodes in graph.clusters.items():
 for _ in range(5):
     voting_intention = propagate_voting_intention(graph, voting_intention)
 
-
-for name, vi in voting_intention.items():
-    graph.node_attrs[name].append(vi)
-graph.attr_names.append("voting_intention")
-graph.attr_types.append("float")
+# Add voting intention values to be used by gephi graph output
+graph.set_node_desc("voting_intention", "float", voting_intention)
 
 # Modify how node_attr works, so it can be easily updated on each pass
 # Add initial voting intention
@@ -249,10 +252,10 @@ for n in range(num_steps):
         if scandal_magnitude != 0:
             last_scandal_step = n
         if scandal_magnitude < 0:
-            stats['blue_scandal'].append(abs(scandal_magnitude)*0.1)
+            stats['blue_scandal'].append(abs(scandal_magnitude)*0.2)
             stats['red_scandal'].append(0)
         elif scandal_magnitude > 0:
-            stats['red_scandal'].append(abs(scandal_magnitude)*0.1)
+            stats['red_scandal'].append(abs(scandal_magnitude)*0.2)
             stats['blue_scandal'].append(0)
         voting_intention = alter_voting_intention(voting_intention, scandal_magnitude)
         scandal_total += scandal_magnitude
@@ -263,7 +266,12 @@ for n in range(num_steps):
     if move_nodes > 0:
         if n % move_every == 0:
             to_move = random.sample(range(g_nodes), move_nodes)
-            for node in to_move:
-                graph.move_node(node)
+            graph.move_nodes(to_move)
+    if change_weights > 0:
+        if n % change_every == 0:
+            to_increase = random.sample(range(g_nodes), int(change_weights/2))
+            graph.increase_weights(to_increase)
+            to_decrease = random.sample(range(g_nodes), int(change_weights/2))
+            graph.decrease_weights(to_decrease)
 with open("stats.json", "w") as f:
     f.write(json.dumps(stats))

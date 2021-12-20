@@ -8,13 +8,14 @@ class Graph():
     def __init__(self, 
                  num_nodes=1000,
                  num_cores=1,
-                 intra_core_connectivity=0.5,
-                 core_connectivity=0.3,
-                 add_nodes_random=0.0,
-                 add_nodes_popularity=1.0,
-                 connect_cores_directly=0.8,
-                 connect_second_neighbours=1.0,
-                 connect_random=1.0):
+                 intra_core_connectivity=0.3,
+                 core_connectivity=0.7,
+                 add_nodes_random=0.4,
+                 add_nodes_popularity=1.4,
+                 connect_cores_directly=0.2,
+                 connect_second_neighbours=1.5,
+                 move_nodes_second_neighbour=0.5,
+                 connect_random=0.4):
         self.num_nodes = num_nodes
         self.num_cores = num_cores
         self.intra_core_connectivity = intra_core_connectivity
@@ -23,6 +24,7 @@ class Graph():
         self.add_nodes_popularity = add_nodes_popularity
         self.connect_cores_directly = connect_cores_directly
         self.connect_second_neighbours = connect_second_neighbours
+        self.move_nodes_second_neighbour = move_nodes_second_neighbour
         self.connect_random = connect_random
         self.nodeids = set()
         self.interactions = {}
@@ -34,6 +36,7 @@ class Graph():
         self.out_degree = Counter()
         self.communities = None
         self.clusters = {}
+        self.node_desc = {}
         self.node_attrs = {}
         self.attr_names = []
         self.attr_types = []
@@ -115,7 +118,7 @@ class Graph():
         ci = 0
         for cn in range(self.num_cores):
             cores[cn] = []
-            subset = int(self.num_nodes/(20*self.num_cores))
+            subset = max(1, int(self.num_nodes/(20*self.num_cores)))
             sn = int(subset + random.randint(1, subset))
             for source in range(ci, sn+ci):
                 cores[cn].append(source)
@@ -181,14 +184,12 @@ class Graph():
         print("Getting communities")
         self.make_communities()
 
-        for nodeid in self.nodeids:
-            self.node_attrs[nodeid] = []
-
-        for label, names in self.clusters.items():
-            for name in names:
-                self.node_attrs[name].append(label)
-        self.attr_names.append("community")
-        self.attr_types.append("integer")
+    # These are used when writing the gexf file
+    # Values should be a dict of nodeid:val entries
+    def set_node_desc(self, name, atype, values):
+        self.node_desc[name] = {}
+        self.node_desc[name]['type'] = atype
+        self.node_desc[name]['values'] = values
 
     def make_nx_graph(self):
         self.nx_graph = nx.Graph()
@@ -196,10 +197,13 @@ class Graph():
 
     def make_communities(self):
         self.communities = community.best_partition(self.nx_graph)
+        nd = dict(self.communities)
         for node, mod in self.communities.items():
             if mod not in self.clusters:
                 self.clusters[mod] = []
             self.clusters[mod].append(node)
+        # Set community labels for gexf output
+        self.set_node_desc("community", "integer", nd)
 
     def print_community_stats(self, num=5):
         for cluster_index, cluster_nodes in self.clusters.items():
@@ -214,6 +218,16 @@ class Graph():
             print(msg)
 
     def write_gexf(self, filename):
+        anames = []
+        atypes = []
+        nattrs = {}
+        for aname, data in self.node_desc.items():
+            anames.append(aname)
+            atypes.append(data["type"])
+            for n, v in data["values"].items():
+                if n not in nattrs:
+                    nattrs[n] = []
+                nattrs[n].append(v)
         nodes = sorted(list(set([m[0] for m in self.mapping]).union(set([m[1] for m in self.mapping]))))
         vocab = {}
         vocab_inv = {}
@@ -229,10 +243,10 @@ class Graph():
                     header += line
             f.write(header + "\n")
 
-            if len(self.attr_names) > 0:
+            if len(anames) > 0:
                 f.write("\t\t<attributes class=\"node\">\n")
-                for index, name in enumerate(self.attr_names):
-                    f.write("\t\t\t<attribute id=\"" + str(index) + "\" title=\"" + str(name) + "\" type=\"" + str(self.attr_types[index]) + "\"/>\n")
+                for index, name in enumerate(anames):
+                    f.write("\t\t\t<attribute id=\"" + str(index) + "\" title=\"" + str(name) + "\" type=\"" + str(atypes[index]) + "\"/>\n")
                 f.write("\t\t</attributes>\n")
 
 
@@ -241,10 +255,10 @@ class Graph():
             for index, node in enumerate(nodes):
                 label = vocab[node]
                 entry = indent+ "<node id=\"" + str(label) + "\" label=\"" + str(node) + "\">\n"
-                if len(self.attr_names) > 0:
+                if len(anames) > 0:
                     entry += indent + "\t<attvalues>\n"
-                    for index, name in enumerate(self.attr_names):
-                        a = self.node_attrs[node]
+                    for index, name in enumerate(anames):
+                        a = nattrs[node]
                         entry += indent + "\t\t<attvalue for=\"" + str(index) + "\" value=\"" + str(a[index]) + "\"/>\n"
                     entry += indent + "\t</attvalues>\n"
                 entry += indent + "</node>\n"
@@ -278,27 +292,117 @@ class Graph():
         self.make_nx_graph()
         self.make_communities()
 
-    def move_node(self, nodeid):
-        first_neighbours = self.neighbours[nodeid]
-        second_neighbours = self.get_second_neighbours(nodeid)
-        num_to_change = min(1, int(len(first_neighbours)*0.1))
-        to_break = random.sample(first_neighbours, num_to_change)
-        to_make = random.sample(second_neighbours, num_to_change)
+    # Increases weights of outgoing edges from each node by 1
+    # The proportion of edges selected is specified by num
+    # At least one edge is always chosen
+    def increase_weights(self, nodeids, num=0.1):
+        ret = {}
+        for source, targets in self.interactions.items():
+            if source in nodeids:
+                ret[source] = Counter()
+                up_targets = [x for x, c in targets.items()]
+                num_changes = max(1, int(len(targets)*num))
+                up_targets = random.sample(up_targets, num_changes)
+                for target, weight in targets.items():
+                    if target in up_targets:
+                        weight += 1
+                    ret[source][target] = weight
+            else:
+                ret[source] = targets
+        self.rebuild_graph(ret)
+
+    # Decreases weights of outgoing edges from each node by 1
+    # The proportion of edges selected is specified by num
+    # At least one edge is always chosen
+    # If the edge weight falls below zero, the edge disappears
+    def decrease_weights(self, nodeids, num=0.1):
+        ret = {}
+        for source, targets in self.interactions.items():
+            if source in nodeids:
+                # Do not orphan a node in this process
+                down_targets = [x for x, c in targets.items() if len(self.get_incoming_weights(x)) > 1]
+                if len(down_targets) > 0:
+                    num_changes = max(1, int(len(targets)*num))
+                    down_targets = random.sample(down_targets, num_changes)
+                for target, weight in targets.items():
+                    if target in down_targets:
+                        weight -= 1
+                    if weight > 0:
+                        if source not in ret:
+                            ret[source] = Counter()
+                        ret[source][target] = weight
+            else:
+                ret[source] = targets
+        self.rebuild_graph(ret)
+
+    def move_nodes(self, nodeids, num=0.1):
+        if random.random() < self.move_nodes_second_neighbour:
+            return self.move_nodes_sn(nodeids, num)
+        else:
+            return self.move_nodes_random(nodeids, num)
+
+    # Moves nodes, breaking existing edges and forming new edges with weight of 1
+    # The proportion of edges to break and make are specified by num
+    # New edges are always formed to second neighbour nodes
+    def move_nodes_sn(self, nodeids, num=0.1):
+        to_break = {}
+        to_make = {}
+        for nodeid in nodeids:
+            # Do not orphan a node in this process
+            first_neighbours = [x for x in self.neighbours[nodeid] if len(self.get_incoming_weights(x)) > 1]
+            if len(first_neighbours) > 0:
+                second_neighbours = self.get_second_neighbours(nodeid)
+                num_to_change = max(1, int(len(first_neighbours)*num))
+                tb = random.sample(first_neighbours, num_to_change)
+                tm = random.sample(second_neighbours, num_to_change)
+                to_break[nodeid] = tb
+                to_make[nodeid] = tm
         ret = {}
         for source, targets in self.interactions.items():
             for target, count in targets.items():
-                if source==nodeid and target in to_break:
+                if source in to_break.keys() and target in to_break[source]:
                     continue
-                if target==nodeid and source in to_break:
+                if target in to_break.keys() and source in to_break[target]:
                     continue
                 if source not in ret:
                     ret[source] = Counter()
                 ret[source][target] = count
-        for target in to_make:
-            if source not in ret:
-                ret[source] = Counter()
-            ret[source][target] += 1
+        for source, targets in to_make.items():
+            for target in targets:
+                if source not in ret:
+                    ret[source] = Counter()
+                ret[source][target] += 1
         self.rebuild_graph(ret)
 
-
-
+    # Moves nodes, breaking existing edges and forming new edges with weight of 1
+    # The proportion of edges to break and make are specified by num
+    # New edges are always formed to second neighbour nodes
+    def move_nodes_random(self, nodeids, num=0.1):
+        to_break = {}
+        to_make = {}
+        for nodeid in nodeids:
+            # Do not orphan a node in this process
+            first_neighbours = [x for x in self.neighbours[nodeid] if len(self.get_incoming_weights(x)) > 1]
+            if len(first_neighbours) > 0:
+                second_neighbours = range(len(self.nodeids))
+                num_to_change = max(1, int(len(first_neighbours)*num))
+                tb = random.sample(first_neighbours, num_to_change)
+                tm = random.sample(second_neighbours, num_to_change)
+                to_break[nodeid] = tb
+                to_make[nodeid] = tm
+        ret = {}
+        for source, targets in self.interactions.items():
+            for target, count in targets.items():
+                if source in to_break.keys() and target in to_break[source]:
+                    continue
+                if target in to_break.keys() and source in to_break[target]:
+                    continue
+                if source not in ret:
+                    ret[source] = Counter()
+                ret[source][target] = count
+        for source, targets in to_make.items():
+            for target in targets:
+                if source not in ret:
+                    ret[source] = Counter()
+                ret[source][target] += 1
+        self.rebuild_graph(ret)
