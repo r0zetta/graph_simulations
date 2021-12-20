@@ -12,6 +12,7 @@ class Graph():
                  core_connectivity=0.7,
                  add_nodes_random=0.4,
                  add_nodes_popularity=1.4,
+                 popularity_cutoff=1.0,
                  connect_cores_directly=0.2,
                  connect_second_neighbours=1.5,
                  move_nodes_second_neighbour=0.5,
@@ -22,6 +23,7 @@ class Graph():
         self.core_connectivity = core_connectivity
         self.add_nodes_random = add_nodes_random
         self.add_nodes_popularity = add_nodes_popularity
+        self.popularity_cutoff = popularity_cutoff
         self.connect_cores_directly = connect_cores_directly
         self.connect_second_neighbours = connect_second_neighbours
         self.move_nodes_second_neighbour = move_nodes_second_neighbour
@@ -117,7 +119,8 @@ class Graph():
     def connect_node_popularity(self, nodeid):
         ci = len(self.interactions)
         categorical = []
-        for item, count in self.in_degree.items():
+        nc = int(len(self.in_degree) * self.popularity_cutoff)
+        for item, count in self.in_degree.most_common(nc):
             categorical.extend([item]*count)
         target = random.choice(categorical)
         self.add_edge(nodeid, target)
