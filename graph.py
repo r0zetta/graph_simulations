@@ -1,4 +1,4 @@
-import random, math, json
+import random, math, json, sys
 from collections import Counter
 import networkx as nx
 import community
@@ -64,12 +64,15 @@ class Graph():
         return ret
 
     def get_neighbours(self, nodeid):
-        return self.neigbours[nodeid]
+        if nodeid in self.neighbours:
+            return self.neighbours[nodeid]
+        else:
+            return []
 
     def get_second_neighbours(self, nodeid):
         second_neighbours = set()
-        for nodeid in self.neighbours[nodeid]:
-            second_neighbours.update(self.neighbours[nodeid])
+        for nodeid in self.get_neighbours(nodeid):
+            second_neighbours.update(self.get_neighbours(nodeid))
         return second_neighbours
 
     def add_edge(self, source, target, weight=1):
@@ -111,6 +114,27 @@ class Graph():
                 mapping.append((source, target, count))
         self.mapping = mapping
 
+    def connect_node_popularity(self, nodeid):
+        ci = len(self.interactions)
+        categorical = []
+        for item, count in self.in_degree.items():
+            categorical.extend([item]*count)
+        target = random.choice(categorical)
+        self.add_edge(nodeid, target)
+
+    def connect_node_random(self, nodeid):
+        ci = len(self.interactions)
+        target = random.choice(range(ci))
+        self.add_edge(nodeid, target)
+
+    def connect_node_second_neighbour(self, nodeid):
+        first_neighbours = self.get_neighbours(nodeid)
+        second_neighbours = self.get_second_neighbours(nodeid)
+        second_neighbours.difference_update(first_neighbours)
+        if len(second_neighbours) > 0:
+            target = random.choice(list(second_neighbours))
+            self.add_edge(nodeid, target)
+
     def make_graph(self):
         # Create a starting core network
         print("Creating core network with " + str(self.num_cores) + " cores.")
@@ -149,35 +173,24 @@ class Graph():
 
         # Add further nodes to existing graph
         print("Adding extra nodes by popularity")
-        for i in range(int(self.num_nodes * self.add_nodes_popularity)):
-            ci = len(self.interactions)
-            categorical = []
-            for item, count in self.in_degree.items():
-                categorical.extend([item]*count)
-            target = random.choice(categorical)
-            self.add_edge(ci, target)
+        for nodeid in range(int(self.num_nodes * self.add_nodes_popularity)):
+            self.connect_node_popularity(nodeid)
 
         print("Adding extra nodes by random selection")
-        for i in range(int(self.num_nodes * self.add_nodes_random)):
-            ci = len(self.interactions)
-            target = random.choice(range(ci))
-            self.add_edge(ci, target)
+        for nodeid in range(int(self.num_nodes * self.add_nodes_random)):
+            self.connect_node_random(nodeid)
 
-        # Add extra random connections between nearby existing nodes
+        # Add extra connections between nearby existing nodes
         print("Adding extra connections fron existing nodes to their second neighbours")
         for _ in range(int(self.num_nodes * self.connect_second_neighbours)):
-            source = random.randint(1, self.num_nodes)
-            first_neighbours = self.neighbours[source]
-            second_neighbours = self.get_second_neighbours(source)
-            second_neighbours.difference_update(first_neighbours)
-            if len(second_neighbours) > 0:
-                target = random.choice(list(second_neighbours))
-                self.add_edge(source, target)
+            nodeid = random.choice(range(self.num_nodes))
+            self.connect_node_second_neighbour(nodeid)
 
+        # Add extra connections between random nodes
         print("Adding extra connections fron existing nodes random other nodes")
         for _ in range(int(self.num_nodes * self.connect_random)):
-            source, target = random.sample(range(self.num_nodes), 2)
-            self.add_edge(source, target)
+            nodeid = random.choice(range(self.num_nodes))
+            self.connect_node_random(nodeid)
 
         print("Making nx graph")
         self.make_nx_graph()
@@ -276,6 +289,7 @@ class Graph():
             f.write("</gexf>\n")
 
     def rebuild_graph(self, interactions):
+        self.old_nodeids = set(self.nodeids)
         self.nodeids = set()
         self.interactions = {}
         self.reverse_interactions = {}
@@ -289,6 +303,11 @@ class Graph():
         for source, targets in interactions.items():
             for target, count in targets.items():
                 self.add_edge(source, target, count)
+        d = self.old_nodeids.difference(self.nodeids)
+        # Reconnect orphaned nodes
+        if len(d) > 0:
+            for nodeid in d:
+                self.connect_node_random(nodeid)
         self.make_nx_graph()
         self.make_communities()
 
@@ -349,7 +368,7 @@ class Graph():
         to_make = {}
         for nodeid in nodeids:
             # Do not orphan a node in this process
-            first_neighbours = [x for x in self.neighbours[nodeid] if len(self.get_incoming_weights(x)) > 1]
+            first_neighbours = [x for x in self.get_neighbours(nodeid) if len(self.get_incoming_weights(x)) > 1]
             if len(first_neighbours) > 0:
                 second_neighbours = self.get_second_neighbours(nodeid)
                 num_to_change = max(1, int(len(first_neighbours)*num))
@@ -382,7 +401,7 @@ class Graph():
         to_make = {}
         for nodeid in nodeids:
             # Do not orphan a node in this process
-            first_neighbours = [x for x in self.neighbours[nodeid] if len(self.get_incoming_weights(x)) > 1]
+            first_neighbours = [x for x in self.get_neighbours(nodeid) if len(self.get_incoming_weights(x)) > 1]
             if len(first_neighbours) > 0:
                 second_neighbours = range(len(self.nodeids))
                 num_to_change = max(1, int(len(first_neighbours)*num))

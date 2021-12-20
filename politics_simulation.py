@@ -1,5 +1,5 @@
 from graph import *
-import os, time, sys
+import os, time
 
 
 def print_voting_intention(voting_intention):
