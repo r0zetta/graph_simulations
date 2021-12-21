@@ -16,7 +16,8 @@ class Graph():
                  connect_cores_directly=0.2,
                  connect_second_neighbours=1.5,
                  move_nodes_second_neighbour=0.5,
-                 connect_random=0.4):
+                 connect_random=0.4,
+                 config=None):
         self.num_nodes = num_nodes
         self.num_cores = num_cores
         self.intra_core_connectivity = intra_core_connectivity
@@ -28,6 +29,12 @@ class Graph():
         self.connect_second_neighbours = connect_second_neighbours
         self.move_nodes_second_neighbour = move_nodes_second_neighbour
         self.connect_random = connect_random
+        self.config = None
+        if config is not None:
+            valid = self.validate_config(config)
+            if valid == False:
+                sys.exit(0)
+            self.config = config
         self.nodeids = set()
         self.interactions = {}
         self.reverse_interactions = {}
@@ -42,7 +49,12 @@ class Graph():
         self.node_attrs = {}
         self.attr_names = []
         self.attr_types = []
-        self.make_graph()
+        if self.config is not None:
+            self.make_graph_from_config()
+        else:
+            self.make_new_graph_default()
+        self.make_nx_graph()
+        self.make_communities()
 
     def exists_nodeid(self, nodeid):
         if nodeid in self.nodeids:
@@ -116,6 +128,37 @@ class Graph():
                 mapping.append((source, target, count))
         self.mapping = mapping
 
+    def oversample(self, data, num):
+        sample = []
+        if num > len(data):
+            for _ in range(num):
+                sample.append(random.choice(data))
+        else:
+            sample = random.sample(data, num)
+        return sample
+
+    def make_categorical(self, nodeids, cutoff):
+        categorical = []
+        num_entries = int(max(1, abs(len(nodeids) * cutoff)))
+        indeg = Counter()
+        for n in nodeids:
+            indeg[n] = self.in_degree[n]
+        if cutoff > 0:
+            for x, c in indeg.most_common(num_entries):
+                categorical.extend([x]*c)
+        else:
+            lowest = [x for x, c in indeg.most_common()]
+            if num_entries > len(lowest):
+                lowest = lowest[-num_entries:]
+            for x in lowest:
+                categorical.extend([x]*indeg[x])
+        return categorical
+
+    def connect_node_popularity_nodelist(self, nodeid, nodelist):
+        categorical = self.make_categorical(nodelist, 1.0)
+        target = random.choice(categorical)
+        self.add_edge(nodeid, target)
+
     def connect_node_popularity(self, nodeid):
         ci = len(self.interactions)
         categorical = []
@@ -123,6 +166,10 @@ class Graph():
         for item, count in self.in_degree.most_common(nc):
             categorical.extend([item]*count)
         target = random.choice(categorical)
+        self.add_edge(nodeid, target)
+
+    def connect_node_random_nodelist(self, nodeid, nodelist):
+        target = random.choice(nodelist)
         self.add_edge(nodeid, target)
 
     def connect_node_random(self, nodeid):
@@ -138,32 +185,101 @@ class Graph():
             target = random.choice(list(second_neighbours))
             self.add_edge(nodeid, target)
 
-    def make_graph(self):
-        # Create a starting core network
+    def validate_config(self, config):
+        valid = True
+        sl_fields =   [["cores",
+                        "extra_nodes_random",
+                        "extra_nodes_popularity",
+                        "popularity_cutoff",
+                        "extra_edges_second_neighbour",
+                        "extra_edges_random"],
+                       ["core_core_connections",
+                        "core_core_connection_type"]]
+        for item in sl_fields:
+            base = len(config[item[0]])
+            for name in item[1:]:
+                if len(config[name]) != base:
+                    print("Field: " + str(name) + " should contain " + str(base) + " items.")
+                    valid = False
+        return valid
+
+    def make_graph_from_config(self):
         cores = {}
         ci = 0
-        for cn in range(self.num_cores):
-            cores[cn] = []
-            subset = max(1, int(self.num_nodes/(20*self.num_cores)))
-            sn = int(subset + random.randint(1, subset))
-            for source in range(ci, sn+ci):
-                cores[cn].append(source)
-                max_connections = int(sn * self.intra_core_connectivity)
-                if max_connections > 0:
-                    num_connections = random.randint(1, max_connections)
-                    if sn > 0 and sn >= num_connections:
-                        connections = random.sample(range(ci, sn+ci), num_connections)
+        # Create initial cores
+        for index, core_size in enumerate(self.config["cores"]):
+            cores[index] = []
+            cores[index].append(ci)
+            ci += 1
+            self.add_edge(ci, cores[index][0])
+            cores[index].append(ci)
+            for _ in range(core_size):
+                ci += 1
+                self.connect_node_random_nodelist(ci, cores[index])
+                cores[index].append(ci)
+
+        if len(cores) > 1:
+            for index, item in enumerate(self.config["core_core_connections"]):
+                source_core, target_core, num_connections = item
+                target1 = self.oversample(cores[source_core], num_connections)
+                target2 = self.oversample(cores[target_core], num_connections)
+                for ind in range(num_connections):
+                    if self.config["core_core_connection_type"][index] == "direct":
+                        self.add_edge(target1[ind], target2[ind])
                     else:
-                        connections = [ci]
-                    for target in connections:
-                        self.add_edge(source, target)
-            ci += sn
+                        # Consider directionality
+                        self.add_edge(target1[ind], ci)
+                        self.add_edge(ci, target2[ind])
+                        ci += 1
+
+        for index, item in enumerate(self.config["extra_nodes_random"]):
+            targets = self.oversample(cores[index], item)
+            for ind in range(item):
+                self.add_edge(ci, targets[ind])
+                cores[index].append(ci)
+                ci += 1
+
+        for index, item in enumerate(self.config["extra_nodes_popularity"]):
+            cutoff = self.config["popularity_cutoff"][index]
+            categorical = self.make_categorical(cores[index], cutoff)
+            targets = self.oversample(categorical, item)
+            for ind in range(item):
+                self.add_edge(ci, targets[ind])
+                cores[index].append(ci)
+                ci += 1
+
+        for index, item in enumerate(self.config["extra_edges_second_neighbour"]):
+            for _ in range(item):
+                nodeid = random.choice(cores[index])
+                self.connect_node_second_neighbour(nodeid)
+
+        for index, item in enumerate(self.config["extra_edges_random"]):
+            for _ in range(item):
+                nodeid = random.choice(cores[index])
+                self.connect_node_random(nodeid)
+
+    def make_new_graph_default(self):
+        cores = {}
+        ci = 0
+        # Create initial cores
+        for index in range(self.num_cores):
+            cores[index] = []
+            cores[index].append(ci)
+            ci += 1
+            self.add_edge(ci, cores[index][0])
+            cores[index].append(ci)
+            core_size = max(1, int(self.num_nodes/(20*self.num_cores)))
+            core_size = int(core_size + random.randint(1, core_size))
+            for _ in range(core_size):
+                ci += 1
+                self.connect_node_random_nodelist(ci, cores[index])
+                cores[index].append(ci)
 
         # Create some connections between cores
         if self.num_cores > 1:
             num_connections = max(1, int(np.mean([len(x) for l, x in cores.items()]) * self.core_connectivity))
             for _ in range(num_connections):
-                cs = random.sample(range(self.num_cores), 2)
+                cs = self.oversample(range(self.num_cores), 2)
                 target1 = random.choice(cores[cs[0]])
                 target2 = random.choice(cores[cs[1]])
                 if random.random() < self.connect_cores_directly:
@@ -191,9 +307,6 @@ class Graph():
         for _ in range(int(self.num_nodes * self.connect_random)):
             nodeid = random.choice(range(len(self.nodeids)))
             self.connect_node_random(nodeid)
-
-        self.make_nx_graph()
-        self.make_communities()
 
     # These are used when writing the gexf file
     # Values should be a dict of nodeid:val entries
@@ -331,7 +444,7 @@ class Graph():
                 ret[source] = Counter()
                 up_targets = [x for x, c in targets.items()]
                 num_changes = max(1, int(len(targets)*num))
-                up_targets = random.sample(up_targets, num_changes)
+                up_targets = self.oversample(up_targets, num_changes)
                 for target, weight in targets.items():
                     if target in up_targets:
                         weight += 1
@@ -352,7 +465,7 @@ class Graph():
                 down_targets = [x for x, c in targets.items() if len(self.get_incoming_weights(x)) > 1]
                 if len(down_targets) > 0:
                     num_changes = max(1, int(len(targets)*num))
-                    down_targets = random.sample(down_targets, num_changes)
+                    down_targets = self.oversample(down_targets, num_changes)
                 for target, weight in targets.items():
                     if target in down_targets:
                         weight -= 1
@@ -382,8 +495,8 @@ class Graph():
             if len(first_neighbours) > 0:
                 second_neighbours = self.get_second_neighbours(nodeid)
                 num_to_change = max(1, int(len(first_neighbours)*num))
-                tb = random.sample(first_neighbours, num_to_change)
-                tm = random.sample(second_neighbours, num_to_change)
+                tb = self.oversample(first_neighbours, num_to_change)
+                tm = self.oversample(second_neighbours, num_to_change)
                 to_break[nodeid] = tb
                 to_make[nodeid] = tm
         ret = {}
@@ -415,8 +528,8 @@ class Graph():
             if len(first_neighbours) > 0:
                 second_neighbours = range(len(self.nodeids))
                 num_to_change = max(1, int(len(first_neighbours)*num))
-                tb = random.sample(first_neighbours, num_to_change)
-                tm = random.sample(second_neighbours, num_to_change)
+                tb = self.oversample(first_neighbours, num_to_change)
+                tm = self.oversample(second_neighbours, num_to_change)
                 to_break[nodeid] = tb
                 to_make[nodeid] = tm
         ret = {}
