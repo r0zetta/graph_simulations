@@ -117,6 +117,7 @@ def propagate_voting_intention(graph, voting_intention):
 
 num_nodes=1000
 num_cores=1
+intra_core_connectivity=0.3
 core_connectivity=0.7
 add_nodes_random=0.4
 add_nodes_popularity=1.4
@@ -147,6 +148,7 @@ save_every=500
 # Make population interaction graph
 graph = Graph(num_nodes=num_nodes,
               num_cores=num_cores,
+              intra_core_connectivity=intra_core_connectivity,
               core_connectivity=core_connectivity,
               add_nodes_random=add_nodes_random,
               add_nodes_popularity=add_nodes_popularity,
