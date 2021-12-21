@@ -16,6 +16,7 @@ g.print_community_stats()
 # Play with graph construction here
 g = Graph(num_nodes=300,
           num_cores=1,
+          intra_core_connectivity=1.0,
           core_connectivity=1.0,
           add_nodes_random=0.5,
           add_nodes_popularity=1.5,

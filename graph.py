@@ -259,21 +259,25 @@ class Graph():
                 self.connect_node_random(nodeid)
 
     def make_new_graph_default(self):
+        # Create a starting core network
         cores = {}
         ci = 0
-        # Create initial cores
-        for index in range(self.num_cores):
-            cores[index] = []
-            cores[index].append(ci)
-            ci += 1
-            self.add_edge(ci, cores[index][0])
-            cores[index].append(ci)
-            core_size = max(1, int(self.num_nodes/(20*self.num_cores)))
-            core_size = int(core_size + random.randint(1, core_size))
-            for _ in range(core_size):
-                ci += 1
-                self.connect_node_random_nodelist(ci, cores[index])
-                cores[index].append(ci)
+        for cn in range(self.num_cores):
+            cores[cn] = []
+            subset = max(1, int(self.num_nodes/(20*self.num_cores)))
+            sn = int(subset + random.randint(1, subset))
+            for source in range(ci, sn+ci):
+                cores[cn].append(source)
+                max_connections = int(sn * self.intra_core_connectivity)
+                if max_connections > 0:
+                    num_connections = random.randint(1, max_connections)
+                    if sn > 0 and sn >= num_connections:
+                        connections = random.sample(range(ci, sn+ci), num_connections)
+                    else:
+                        connections = [ci]
+                    for target in connections:
+                        self.add_edge(source, target)
+            ci += sn
 
         # Create some connections between cores
         if self.num_cores > 1:
