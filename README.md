@@ -1,2 +1,2 @@
 # graph_simulations
-Synthesising graphs and simulating phenomena
+Synthesising graphs and simulating things
