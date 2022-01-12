@@ -1,4 +1,5 @@
 from graph import *
+from graphviz import *
 
 conf = {"cores": [50, 100, 50],
         "core_core_connections": [[0, 1, 5], [1, 2, 10]],
@@ -12,6 +13,11 @@ conf = {"cores": [50, 100, 50],
 g = Graph(config=conf)
 g.print_basic_stats()
 g.print_community_stats()
+inter = g.interactions
+degree = g.in_degree
+gv = GraphViz()
+im = gv.make_graphviz(inter, degree)
+im.save("test1.png")
 
 # Play with graph construction here
 g = Graph(num_nodes=300,
@@ -27,5 +33,10 @@ g = Graph(num_nodes=300,
           connect_random=0.0)
 g.print_basic_stats()
 g.print_community_stats()
-g.write_gexf("graph_2.gexf")
+g.write_gexf("test2.gexf")
+inter = g.interactions
+degree = g.in_degree
+gv = GraphViz()
+im = gv.make_graphviz(inter, degree)
+im.save("test2.png")
 
