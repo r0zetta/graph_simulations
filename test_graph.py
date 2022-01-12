@@ -15,8 +15,8 @@ g.print_basic_stats()
 g.print_community_stats()
 inter = g.interactions
 degree = g.in_degree
-gv = GraphViz()
-im = gv.make_graphviz(inter, degree)
+gv = GraphViz(inter, degree)
+im = gv.make_graphviz()
 im.save("test1.png")
 
 # Play with graph construction here
@@ -36,7 +36,7 @@ g.print_community_stats()
 g.write_gexf("test2.gexf")
 inter = g.interactions
 degree = g.in_degree
-gv = GraphViz()
-im = gv.make_graphviz(inter, degree)
+gv = GraphViz(inter, degree)
+im = gv.make_graphviz()
 im.save("test2.png")
 

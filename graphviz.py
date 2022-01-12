@@ -3,11 +3,21 @@ import community as louvain
 from fa2 import ForceAtlas2
 from PIL import Image, ImageDraw, ImageFont
 from collections import Counter
+import numpy as np
 import math
 
 
 class GraphViz:
-    def __init__(self):
+    def __init__(self, inter, degree, initial_pos=None,
+                 mag_factor=1.0, scaling=5.0, gravity=20.0):
+        self.inter = inter
+        self.degree = degree
+        self.initial_pos = initial_pos
+        self.mag_factor = mag_factor
+        self.scaling = scaling
+        self.gravity = gravity
+        self.canvas_width = int(1200 * self.mag_factor)
+        self.canvas_height = int(1200 * self.mag_factor)
         self.color_palette = ((0, 131, 182), (255, 75, 0), (32, 198, 0), (255, 84, 255),
                               (111, 50, 25), (0, 204, 134), (255, 0, 138), (219, 168, 0),
                               (150, 97, 180), (8, 91, 0), (0, 222, 255), (120, 191, 143),
@@ -22,6 +32,8 @@ class GraphViz:
                               (202, 135, 186), (17, 181, 0), (0, 198, 255), (255, 78, 0),
                               (0, 114, 88), (150, 100, 27), (204, 114, 255), (38, 100, 180),
                              )
+        self.get_stats()
+
     def hex_to_rgb(self, h):
         h = h.lstrip('#')
         rgb = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
@@ -36,9 +48,9 @@ class GraphViz:
     def distance(self, p1, p2):
         return math.sqrt(((p1[0]-p2[0])**2)+((p1[1]-p2[1])**2))
 
-    def move_point(self, p1, distance, angle):
-        new_x = p1[0] + distance * math.cos(angle)
-        new_y = p1[1] + distance * math.sin(angle)
+    def move_point(self, p, distance, angle):
+        new_x = p[0] + distance * math.cos(angle)
+        new_y = p[1] + distance * math.sin(angle)
         return (new_x, new_y)
 
     def get_control_points(self, p1, p2):
@@ -118,21 +130,13 @@ class GraphViz:
     def convert_coords(self, x, y):
         coords_width = self.max_x - self.min_x
         coords_height = self.max_y - self.min_y
-        width_ratio = (self.canvas_width)/coords_width
-        height_ratio = (self.canvas_height)/coords_height
+        width_ratio = (self.canvas_width-(self.mag_factor*100))/coords_width
+        height_ratio = (self.canvas_height-(self.mag_factor*100))/coords_height
         new_x = (x - self.min_x)*width_ratio
         new_y = (y - self.min_y)*height_ratio
         return new_x, new_y
 
-    def make_graphviz(self, inter, degree, initial_pos=None,
-                      mag_factor=3.0, scaling=5.0, gravity=20.0):
-        self.inter = inter
-        self.degree = degree
-        self.initial_pos = initial_pos
-        self.mag_factor = mag_factor
-        self.canvas_width = int(1200 * self.mag_factor)
-        self.canvas_height = int(1200 * self.mag_factor)
-
+    def get_stats(self):
         mapping = []
         self.max_weight = 0
         for source, targets in self.inter.items():
@@ -151,8 +155,8 @@ class GraphViz:
                 self.clusters[mod] = []
             self.clusters[mod].append(node)
 
-        FA2 = ForceAtlas2(self.G, scalingRatio=scaling, gravity=gravity, verbose=False)
-        pos = FA2.forceatlas2_networkx_layout(self.G, pos=self.initial_pos, iterations=200)
+        FA2 = ForceAtlas2(self.G, scalingRatio=self.scaling, gravity=self.gravity, verbose=False)
+        pos = FA2.forceatlas2_networkx_layout(self.G, pos=self.initial_pos, iterations=100)
         self.max_x = max([c[0] for x, c in pos.items()])
         self.min_x = min([c[0] for x, c in pos.items()])
         self.max_y = max([c[1] for x, c in pos.items()])
@@ -174,6 +178,7 @@ class GraphViz:
                 self.modularity_class[name] = community_number
 
 
+    def draw_image(self):
         self.im = Image.new('RGB', (self.canvas_width, self.canvas_height), (0, 0, 0))
         self.draw = ImageDraw.Draw(self.im)
 
@@ -183,7 +188,7 @@ class GraphViz:
                 w = int((weight*3)/self.max_weight)
                 mod = self.modularity_class[source]
                 color = self.color_palette[mod]
-                df = 0.3 + (0.2*w)
+                df = 0.25 + (0.2*w)
                 color = self.adjust(color, df)
                 sp = self.positions[source]
                 tp = self.positions[target]
@@ -204,3 +209,41 @@ class GraphViz:
             self.draw_label(xpos, ypos, sn, font_size)
 
         return self.im
+
+    def interpolate(self, g2):
+        iml = []
+        g1_sns = set([x for x, c in self.positions.items()])
+        g2_sns = set([x for x, c in g2.positions.items()])
+        to_move = g1_sns.intersection(g2_sns)
+        dists = {}
+        angles = {}
+        for sn in to_move:
+            p1 = self.positions[sn]
+            p2 = g2.positions[sn]
+            d = self.distance(p1, p2)
+            dists[sn] = d
+            a = self.angle(p1, p2)
+            angles[sn] = a
+        max_d = max([c for x, c in dists.items()])
+        mean_d = np.mean([c for x, c in dists.items()])
+        print(max_d, mean_d)
+        if mean_d < 10:
+            iml.append(g2.make_graphviz())
+            return iml
+        num_steps = int(mean_d * 0.05)
+        for step in range(num_steps):
+            new_pos = {}
+            for sn in to_move:
+                p = self.positions[sn]
+                d = dists[sn]/num_steps
+                a = angles[sn]
+                new_p = self.move_point(p, d, a)
+                self.positions[sn] = new_p
+            iml.append(self.make_graphviz())
+        iml.append(g2.make_graphviz())
+        return iml
+
+    def make_graphviz(self):
+        self.draw_image()
+        return self.im
+
