@@ -78,7 +78,7 @@ g = Graph(num_nodes=1000,
           connect_second_neighbours=1.0,
           connect_random=0.0)
 ```
-![generated_2](media/generated2.png)
+![generated_2](media/generated_2.png)
 
 # Example 3: classic two-core network
 
@@ -95,7 +95,7 @@ g = Graph(num_nodes=1000,
           connect_second_neighbours=1.0,
           connect_random=0.0)
 ```
-![generated_3](media/generated3.png)
+![generated_3](media/generated_3.png)
 
 # Example 4: loosely-connected three-core network
 
@@ -112,7 +112,7 @@ g = Graph(num_nodes=1000,
           connect_second_neighbours=1.0,
           connect_random=0.0)
 ```
-![generated_4](media/generated4.png)
+![generated_4](media/generated_4.png)
 
 # Example 5: loosely connected disparate comunities
 
@@ -129,7 +129,7 @@ g = Graph(num_nodes=1000,
           connect_second_neighbours=1.0,
           connect_random=0.0)
 ```
-![generated_5](media/generated5.png)
+![generated_5](media/generated_5.png)
 
 # Example 6: blobs
 
@@ -146,7 +146,7 @@ g = Graph(num_nodes=2000,
           connect_second_neighbours=0.5,
           connect_random=0.1)
 ```
-![generated_6](media/generated6.png)
+![generated_6](media/generated_6.png)
 
 # Example 7: jellyfish
 
@@ -163,7 +163,7 @@ g = Graph(num_nodes=1000,
           connect_second_neighbours=0.3,
           connect_random=0.0)
 ```
-![generated_7](media/generated7.png)
+![generated_7](media/generated_7.png)
 
 # Example 8: binary system
 
@@ -180,5 +180,5 @@ g = Graph(num_nodes=2000,
           connect_second_neighbours=0.3,
           connect_random=0.1)
 ```
-![generated_8](media/generated8.png)
+![generated_8](media/generated_8.png)
 
