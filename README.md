@@ -31,7 +31,7 @@ A dict that describes a graph in the following format:
 {s1:{t1:w, t2:w, t3:w...} s2:{t3:w, t4:w...}}
 ```
 
-A dict (or Counter()) containing an entry per node set to that node's in-degree or out-degree.
+A dict (or Counter()) containing an entry per node set to that node's in-degree, out-degree, or any other metric that you might want nodes and labels to be sized by.
 
 ```
     in_degree = Counter()
