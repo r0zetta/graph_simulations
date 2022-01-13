@@ -54,23 +54,23 @@ display(im) # if you're running this in a jupyter notebook
 
 ## Options
 
-**mag_factor** (default: 1.0) 
+**mag_factor** (default: 1.0) Defines the size of the image output. At a value of 1.0, the size of the image is 1200 x 1200.
 
-**scaling** (default: 5.0) 
+**scaling** (default: 5.0) A variable to be passed into the forceatlas2 algorithm. See https://github.com/bhargavchippada/forceatlas2 for details.
 
-**gravity** (default: 20.0) 
+**gravity** (default: 20.0) A variable to be passed into the forceatlas2 algorithm. See https://github.com/bhargavchippada/forceatlas2 for details.
 
-**iterations** (default: 200)
+**iterations** (default: 200) A variable to be passed into the forceatlas2 algorithm. See https://github.com/bhargavchippada/forceatlas2 for details.
                  
-**eadjust** (default: 0.5) 
+**eadjust** (default: 0.5) Applies slight dimming to edges, in-line with how gephi plots graphs. A lower value creates dimmer edges.
 
-**expand** (default: 0.3) 
+**expand** (default: 0.3) Equivalent to gephi's expand transformation. Moves all nodes away from the center point by the defined factor.
 
-**zoom** (default: [[0.0,0.0],[1.0,1.0]])
+**zoom** (default: [[0.0,0.0],[1.0,1.0]]) A manual method for zooming into the graph. The first two values represent how far from the left and top edges to zoom, the second two values represent right and bottom edges.
 
-**auto_zoom** (default: True)
+**auto_zoom** (default: True) When data is collected from natural sources (such as social networks), there are sometimes small "blobs" of nodes that aren't connected to the main graph. When forceatlas2 is applied, these blobs fly far away from the main clump. This causes the visualization to be "zoomed out". Autozoom corrects this by automatically setting the **zoom** variable to center the main graph.
                  
-**font_scaling** (default: "lin")
+**font_scaling** (default: "lin") This variable determines how fonts scale with in-degree or out-degree. Values can be "lin" (lineraly), "pow" (highlights fewer labels) and "sqrt" (highlights more labels than lin).
 
 # graph.py
 
