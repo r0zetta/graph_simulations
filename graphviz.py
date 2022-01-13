@@ -127,7 +127,7 @@ class GraphViz:
     def draw_label(self, x, y, label, s):
         label = str(label)
         s = int(s * self.mag_factor)
-        font = ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial Bold.ttf", s)
+        font = ImageFont.truetype("Arial Bold.ttf", s)
         llen = len(label)
         xoff = x - (llen * 0.25 * s)
         yoff = y - (s * 0.25)
@@ -322,7 +322,7 @@ class GraphViz:
         if mean_d < 10:
             iml.append(g2.make_graphviz())
             return iml
-        num_steps = int(mean_d * 0.05)
+        num_steps = int(mean_d * 0.1)
         for step in range(num_steps):
             new_pos = {}
             for sn in to_move:
@@ -333,7 +333,6 @@ class GraphViz:
                 self.positions[sn] = new_p
             print("Interpolating " + str(step+1) + "/" + str(num_steps))
             iml.append(self.make_graphviz())
-        iml.append(g2.make_graphviz())
         return iml
 
     def make_graphviz(self):
