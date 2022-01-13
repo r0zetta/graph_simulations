@@ -3,6 +3,75 @@ Synthesising graphs and simulating things
 
 This repository contains tools for creating, manipulating, and visualizing node-edge network graph representations. It also contains some code that puts those tools to use. The tools are described in the following sections.
 
+# graphviz.py
+
+I have been using gephi (https://gephi.org/) for many years to visualize node-edge graphs in an appealing and eye-catching manner. Even though the tool is straighforward to use and contains many useful features, I have always wanted for a programmatic method to generate similarly visually appealing graph plots. Unfortunately, the options available don't hold a candle to gephi. As such, I decided to attempt to create a tool capable of creating visualizations similar to those that can be generated with gephi, and _graphviz.py_ is that tool.
+
+In order to use _graphviz.py_ you'll need to install the following:
+
+**networkx** (https://networkx.org/)
+`pip install networkx`
+
+**louvain community detection** (https://github.com/taynaud/python-louvain)
+`pip install python-louvain`
+
+**forceatlas2 for python** (https://github.com/bhargavchippada/forceatlas2)
+`pip install fa2`
+
+**numpy** (https://numpy.org/)
+`pip install numpy`
+
+**pillow** (https://pillow.readthedocs.io/en/stable/)
+`pip install Pillow`
+
+In order to create a graph visualization, you'll need to create the following structures in python:
+
+A dict that describes a graph in the following format:
+```
+{s1:{t1:w, t2:w, t3:w...} s2:{t3:w, t4:w...}}
+```
+
+A dict (or Counter()) containing an entry per node set to that node's in-degree or out-degree.
+
+```
+    in_degree = Counter()
+    out_degree = Counter()
+    for source, targets in interactions.items():
+        for target, count in targets.items():
+            in_degree[target] += count
+            out_degree[source] += count
+```
+
+You thus create the graph visualization like this:
+```
+from graphviz import *
+
+gv = GraphViz(interactions, in_degree)
+im = gv.make_graphviz()
+im.save("graph.png") # to save it
+display(im) # if you're running this in a jupyter notebook
+```
+
+## Options
+
+**mag_factor** (default: 1.0) 
+
+**scaling** (default: 5.0) 
+
+**gravity** (default: 20.0) 
+
+**iterations** (default: 200)
+                 
+**eadjust** (default: 0.5) 
+
+**expand** (default: 0.3) 
+
+**zoom** (default: [[0.0,0.0],[1.0,1.0]])
+
+**auto_zoom** (default: True)
+                 
+**font_scaling** (default: "lin")
+
 # graph.py
 
 graph.py is a python program for creating node-edge graphs from scratch. The tool is highly configurable, allowing for the creation of many distinct node-edge graph phenotypes. The tool requires you have the following python libraries installed:
@@ -188,4 +257,4 @@ A jupyter notebook for playing around with and testing different configuration o
 
 `pip install bokeh`
 
-# graphviz.py
+# politics_simulation.py
