@@ -80,7 +80,7 @@ g = Graph(num_nodes=1000,
 ```
 ![generated_2](media/generated_2.png)
 
-# Example 3: classic two-core network
+## Example 3: classic two-core network
 
 This is an example of how to create a loosely-connected two-core network. Such patterns are commonly seen when studying political content on social networks.
 ```
@@ -97,7 +97,7 @@ g = Graph(num_nodes=1000,
 ```
 ![generated_3](media/generated_3.png)
 
-# Example 4: loosely-connected three-core network
+## Example 4: loosely-connected three-core network
 
 Such networks are rare in the real-world, but may be of interest to study.
 ```
@@ -114,7 +114,7 @@ g = Graph(num_nodes=1000,
 ```
 ![generated_4](media/generated_4.png)
 
-# Example 5: loosely connected disparate comunities
+## Example 5: loosely connected disparate comunities
 
 This is an example of what happens when **num_cores** and **core_connectivity** are set to very high values. This pattern is sometimes seen in follower-following interactions of botnet accounts on Twitter. Each separate cluster is highly connected and forms its own community. Such a graph might be interesting for simulation purposes.
 ```
@@ -131,7 +131,7 @@ g = Graph(num_nodes=1000,
 ```
 ![generated_5](media/generated_5.png)
 
-# Example 6: blobs
+## Example 6: blobs
 
 This configuration illustrates what happens when **add_nodes_popularity** is set to a very high value and **popularity_cutoff** is set to a very low value.
 ```
@@ -148,7 +148,7 @@ g = Graph(num_nodes=2000,
 ```
 ![generated_6](media/generated_6.png)
 
-# Example 7: jellyfish
+## Example 7: jellyfish
 
 This configuration also illustrates what happens when **add_nodes_popularity** is set to a very high value and **popularity_cutoff** is set to a very low value. However, in this example, **intra_core_connectivity** is also set high.
 ```
@@ -165,7 +165,7 @@ g = Graph(num_nodes=1000,
 ```
 ![generated_7](media/generated_7.png)
 
-# Example 8: binary system
+## Example 8: binary system
 
 This is a two-core example of the scenario where **add_nodes_popularity** is set to a very high value and **popularity_cutoff** is set to a very low value. In this example, **core_connectivity** and **connect_cores_directly** are both low values.
 ```
@@ -182,3 +182,10 @@ g = Graph(num_nodes=2000,
 ```
 ![generated_8](media/generated_8.png)
 
+All the above graph examples can be generated in the _graph_examples.ipynb_ notebook. Running the appropriate cell will also generate a gexf file that can be opened using gephi (https://gephi.org/). In order to run the notebook, you'll need to install requirements for graphviz.py (covered elsewhere on this page).
+
+A jupyter notebook for playing around with and testing different configuration options is available in this repo (graph_testing.ipynb). In order to run the notebook, you'll need to install bokeh (https://docs.bokeh.org/en/latest/#)
+
+`pip install bokeh`
+
+# graphviz.py
