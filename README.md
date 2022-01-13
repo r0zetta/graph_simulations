@@ -54,13 +54,13 @@ display(im) # if you're running this in a jupyter notebook
 
 ## Options
 
-**mag_factor** (default: 1.0) Defines the size of the image output. At a value of 1.0, the size of the image is 1200 x 1200.
+**mag_factor** (default: 1.0) Defines the size of the image output. At a value of 1.0, the size of the image is 1200 x 1200. Setting this to 4.0 or higher will allow even the smallest labels on a resulting image to be examined.
 
 **scaling** (default: 5.0) A variable to be passed into the forceatlas2 algorithm. See https://github.com/bhargavchippada/forceatlas2 for details.
 
 **gravity** (default: 20.0) A variable to be passed into the forceatlas2 algorithm. See https://github.com/bhargavchippada/forceatlas2 for details.
 
-**iterations** (default: 200) A variable to be passed into the forceatlas2 algorithm. See https://github.com/bhargavchippada/forceatlas2 for details.
+**iterations** (default: 200) A variable to be passed into the forceatlas2 algorithm. See https://github.com/bhargavchippada/forceatlas2 for details. Determines how many iterations the algorithm runs. A higher value will lead to longer runtime.
                  
 **eadjust** (default: 0.5) Applies slight dimming to edges, in-line with how gephi plots graphs. A lower value creates dimmer edges.
 
