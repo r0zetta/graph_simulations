@@ -257,4 +257,12 @@ A jupyter notebook for playing around with and testing different configuration o
 
 `pip install bokeh`
 
-# politics_simulation.py
+# Using graph.py and graphviz.py together
+
+# politics_simulation.py - using graph.py to create simulations
+
+# plot_timelapse.py - using graphviz interpolation to create timelapse animations
+
+
+
+
