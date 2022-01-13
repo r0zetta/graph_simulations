@@ -11,7 +11,7 @@ class GraphViz:
     def __init__(self, inter, degree, initial_pos=None,
                  mag_factor=1.0, scaling=5.0, gravity=20.0, iterations=200,
                  eadjust=0.5, expand=0.3, zoom=[[0.0,0.0],[1.0,1.0]], auto_zoom=True,
-                 font_scaling="lin"):
+                 font_scaling="lin", interpolation="lin"):
         self.inter = inter
         self.degree = degree
         self.initial_pos = initial_pos
@@ -24,6 +24,7 @@ class GraphViz:
         self.zoom = zoom
         self.auto_zoom = auto_zoom
         self.font_scaling = font_scaling # lin, pow, sqrt
+        self.interpolation = interpolation # lin, dec, acc
         self.canvas_width = int(1200 * self.mag_factor)
         self.canvas_height = int(1200 * self.mag_factor)
         self.color_palette = ((0, 131, 182), (255, 75, 0), (32, 198, 0), (255, 84, 255),
@@ -337,8 +338,12 @@ class GraphViz:
             new_pos = {}
             for sn in to_move:
                 p = self.positions[sn]
-                d = dists[sn] * 0.5
-                dists[sn] = d
+                if self.interpolation == "lin":
+                    d = dists[sn]/num_steps
+                elif self.interpolation == "dec":
+                    d = dists[sn] * (0.5 ** (step+1))
+                else:
+                    d = dists[sn] * (0.5 ** (num_steps - step))
                 a = angles[sn]
                 new_p = self.move_point(p, d, a)
                 self.positions[sn] = new_p
