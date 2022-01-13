@@ -60,6 +60,7 @@ iterations = 100
 expand = 0.3
 eadjust = 0.4
 auto_zoom = True
+font_scaling = "lin"
 
 slice_len = 10000
 ind_inc = 500
@@ -74,7 +75,8 @@ current_ind += ind_inc
 print("Getting slice " + str(slice_ind))
 gv1 = GraphViz(inter, degree, pos,
                scaling=scaling, iterations=iterations, gravity=gravity,
-               expand=expand, eadjust=eadjust, auto_zoom=auto_zoom)
+               expand=expand, eadjust=eadjust, auto_zoom=auto_zoom,
+               font_scaling=font_scaling)
 im = gv1.make_graphviz()
 fn = savedir + "/fig" + "%05d"%fig_index + ".png"
 print("Saving graphviz: " + fn)
@@ -88,7 +90,8 @@ for n in range(num_slices):
     print("Getting slice " + str(slice_ind))
     gv2 = GraphViz(inter, degree, pos,
                    scaling=scaling, iterations=iterations, gravity=gravity,
-                   expand=expand, eadjust=eadjust, auto_zoom=auto_zoom)
+                   expand=expand, eadjust=eadjust, auto_zoom=auto_zoom,
+                   font_scaling=font_scaling)
     iml = gv1.interpolate(gv2)
     for im in iml:
         fn = savedir + "/fig" + "%05d"%fig_index + ".png"

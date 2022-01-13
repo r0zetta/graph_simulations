@@ -10,18 +10,20 @@ import math
 class GraphViz:
     def __init__(self, inter, degree, initial_pos=None,
                  mag_factor=1.0, scaling=5.0, gravity=20.0, iterations=200,
-                 eadjust=0.5, expand=0.3, zoom=[[0.0,0.0],[1.0,1.0]], auto_zoom=True):
+                 eadjust=0.5, expand=0.3, zoom=[[0.0,0.0],[1.0,1.0]], auto_zoom=True,
+                 font_scaling="lin"):
         self.inter = inter
         self.degree = degree
         self.initial_pos = initial_pos
         self.mag_factor = mag_factor
         self.scaling = scaling
         self.gravity = gravity
+        self.iterations = iterations
         self.eadjust = eadjust
         self.expand = expand
         self.zoom = zoom
         self.auto_zoom = auto_zoom
-        self.iterations = iterations
+        self.font_scaling = font_scaling # lin, pow, sqrt
         self.canvas_width = int(1200 * self.mag_factor)
         self.canvas_height = int(1200 * self.mag_factor)
         self.color_palette = ((0, 131, 182), (255, 75, 0), (32, 198, 0), (255, 84, 255),
@@ -267,6 +269,14 @@ class GraphViz:
                 self.modularity_class[name] = community_number
 
 
+    def set_font_size(self, s):
+        if self.font_scaling == "lin":
+            return 1 + int(23 * (s/self.max_node_size))
+        elif self.font_scaling == "pow":
+            return 1 + int(23 * ((s ** 2)/(self.max_node_size ** 2)))
+        else:
+            return 1 + int(23 * (math.sqrt(s)/math.sqrt(self.max_node_size)))
+
     def draw_image(self):
         self.im = Image.new('RGB', (self.canvas_width, self.canvas_height), (0, 0, 0))
         self.draw = ImageDraw.Draw(self.im)
@@ -297,7 +307,7 @@ class GraphViz:
             color = (128, 128, 128)
             if mod < len(self.color_palette):
                 color = self.color_palette[mod]
-            font_size = 1 + int(20 * (s/self.max_node_size))
+            font_size = self.set_font_size(s)
             self.draw_node(xpos, ypos, s, color)
             self.draw_label(xpos, ypos, sn, font_size)
 
@@ -322,12 +332,13 @@ class GraphViz:
         if mean_d < 10:
             iml.append(g2.make_graphviz())
             return iml
-        num_steps = int(mean_d * 0.1)
+        num_steps = 10
         for step in range(num_steps):
             new_pos = {}
             for sn in to_move:
                 p = self.positions[sn]
-                d = dists[sn]/num_steps
+                d = dists[sn] * 0.5
+                dists[sn] = d
                 a = angles[sn]
                 new_p = self.move_point(p, d, a)
                 self.positions[sn] = new_p
