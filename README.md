@@ -61,7 +61,7 @@ g = Graph(num_nodes=1000,
           connect_second_neighbours=1.5,
           connect_random=0.4)
  ```
-![generated_1]("media/generated_1.png")
+![generated_1](media/generated_1.png)
 
 ## Example 2: no random nodes or connections formed
 
