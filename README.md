@@ -16,6 +16,8 @@ Here is a gephi-generated version of a graph generated in a similar manner:
 Here is an example of a visualization generated from captured Twitter data:
 ![twitter](media/twitter.png)
 
+And the same visualization using **background_mode** = "white"
+![white_mode](media/white_mode.png)
 
 In order to use _graphviz.py_ you'll need to install the following:
 
