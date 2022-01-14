@@ -12,7 +12,7 @@ class GraphViz:
                  mag_factor=1.0, scaling=5.0, gravity=20.0, iterations=100,
                  strong_gravity=False, dissuade_hubs=True, edge_weight_influence=1.0,
                  eadjust=0.5, expand=0.3, zoom=[[0.0,0.0],[1.0,1.0]], auto_zoom=True,
-                 alpha=0.6, label_font="Arial Bold",
+                 alpha=1.0, label_font="Arial Bold",
                  min_font_size=4, max_font_size=24, font_scaling="lin",
                  min_node_size=5, max_node_size=20, node_scaling="lin",
                  min_edge_size=1, max_edge_size=5, edge_scaling="lin",
@@ -163,17 +163,21 @@ class GraphViz:
         memo[n] = result
         return result
 
-    def convert_coords(self, x, y):
+    def convert_coords(self, x, y, pos):
         zxmin, zymin = self.zoom[0]
         zxmax, zymax = self.zoom[1]
         zwidth = zxmax - zxmin
         zheight = zymax - zymin
-        coords_width = (self.max_x - self.min_x) * zwidth
-        coords_height = (self.max_y - self.min_y) * zheight
+        max_x = max([c[0] for x, c in pos.items()])
+        min_x = min([c[0] for x, c in pos.items()])
+        max_y = max([c[1] for x, c in pos.items()])
+        min_y = min([c[1] for x, c in pos.items()])
+        coords_width = (max_x - min_x) * zwidth
+        coords_height = (max_y - min_y) * zheight
         width_ratio = self.canvas_width/coords_width
         height_ratio = self.canvas_height/coords_height
-        new_x = (x - self.min_x)*width_ratio - (self.canvas_width * (zxmin/zwidth))
-        new_y = (y - self.min_y)*height_ratio - (self.canvas_height * (zymin/zheight))
+        new_x = (x - min_x)*width_ratio - (self.canvas_width * (zxmin/zwidth))
+        new_y = (y - min_y)*height_ratio - (self.canvas_height * (zymin/zheight))
         return new_x, new_y
 
     def expand_graph(self):
@@ -190,7 +194,7 @@ class GraphViz:
         self.positions = new_coords
         self.canvas_width += int(self.canvas_width * (self.expand_by*2))
         self.canvas_height += int(self.canvas_height * (self.expand_by*2))
-        self.mag_factor += int(self.mag_factor * (self.expand_by*2))
+        self.mag_factor += int(self.mag_factor * self.expand_by)
         mid_x = int(self.canvas_width/2)
         mid_y = int(self.canvas_height/2)
         mid_p = (mid_x, mid_y)
@@ -295,25 +299,14 @@ class GraphViz:
                                               iterations=self.iterations)
         if self.auto_zoom == True:
             self.autozoom(pos)
-        self.max_x = max([c[0] for x, c in pos.items()])
-        self.min_x = min([c[0] for x, c in pos.items()])
-        self.max_y = max([c[1] for x, c in pos.items()])
-        self.min_y = min([c[1] for x, c in pos.items()])
 
         self.positions = {}
         for sn, coords in pos.items():
             x, y = coords
-            newx, newy = self.convert_coords(x, y)
+            newx, newy = self.convert_coords(x, y, pos)
             self.positions[sn] = [newx, newy]
 
         self.expand_graph()
-
-        self.degree = self.extra_vars[self.size_by]
-        self.max_degree = max([c for x, c in self.degree.items()])
-        self.min_degree = min([c for x, c in self.degree.items()])
-        self.node_sizes = dict([(node, 5+(5*(degree/self.max_degree))) for node, degree in self.degree.items()])
-        self.max_ns = max([c for x, c in self.node_sizes.items()])
-        self.min_ns = min([c for x, c in self.node_sizes.items()])
 
         modularity_class = {}
         for community_number, community in self.clusters.items():
@@ -344,14 +337,14 @@ class GraphViz:
             return max_s
 
     def set_font_size(self, s):
-        max_v = self.max_degree
+        max_v = max([c for x, c in self.extra_vars[self.size_by].items()])
         min_s = self.min_font_size
         max_s = self.max_font_size
         scaling = self.font_scaling
         return self.set_size(s, max_v, min_s, max_s, scaling)
 
     def set_node_size(self, s):
-        max_v = self.max_degree
+        max_v = max([c for x, c in self.extra_vars[self.size_by].items()])
         min_s = self.min_node_size
         max_s = self.max_node_size
         scaling = self.node_scaling
