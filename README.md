@@ -31,22 +31,12 @@ A dict that describes a graph in the following format:
 {s1:{t1:w, t2:w, t3:w...} s2:{t3:w, t4:w...}}
 ```
 
-A dict (or Counter()) containing an entry per node set to that node's in-degree, out-degree, or any other metric that you might want nodes and labels to be sized by.
-
-```
-    in_degree = Counter()
-    out_degree = Counter()
-    for source, targets in interactions.items():
-        for target, count in targets.items():
-            in_degree[target] += count
-            out_degree[source] += count
-```
 
 You thus create the graph visualization like this:
 ```
 from graphviz import *
 
-gv = GraphViz(interactions, in_degree)
+gv = GraphViz(interactions)
 im = gv.make_graphviz()
 im.save("graph.png") # to save it
 display(im) # if you're running this in a jupyter notebook
@@ -64,13 +54,35 @@ display(im) # if you're running this in a jupyter notebook
                  
 **eadjust** (default: 0.5) Applies slight dimming to edges, in-line with how gephi plots graphs. A lower value creates dimmer edges.
 
-**expand** (default: 0.3) Equivalent to gephi's expand transformation. Moves all nodes away from the center point by the defined factor.
+**expand** (default: 0.3) Equivalent to gephi's expand transformation. Moves all nodes away from the center point by the defined factor. Note that this will expand the canvas, resulting in a larger image.
 
 **zoom** (default: [[0.0,0.0],[1.0,1.0]]) A manual method for zooming into the graph. The first two values represent how far from the left and top edges to zoom, the second two values represent right and bottom edges.
 
 **auto_zoom** (default: True) When data is collected from natural sources (such as social networks), there are sometimes small "blobs" of nodes that aren't connected to the main graph. When forceatlas2 is applied, these blobs fly far away from the main clump. This causes the visualization to be "zoomed out". Autozoom corrects this by automatically setting the **zoom** variable to center the main graph.
+
+**label_font** (default: "Arial Bold") the font to use when creating labels. Note that you must have the truetype (.ttf) font with the exact name installed on your machine.
+
+**min_font_size**, **max_font_size** denote minimum and maximum font sizes in the resulting visualization.
                  
-**font_scaling** (default: "lin") This variable determines how fonts scale with in-degree or out-degree. Values can be "lin" (lineraly), "pow" (highlights fewer labels) and "sqrt" (highlights more labels than lin).
+**font_scaling** (default: "lin") This variable determines how fonts scale with in-degree or out-degree. Values can be "lin" (lineraly), "pow" (highlights fewer labels) and "root" (highlights more labels than lin) or "fixed". Both the "pow" and "root" options can include a float (e.g. "pow2.5") that denotes the value. If no value is included (i.e. "pow") the value will be 2. The option "fixed" can include an integer value for the exact size (e.g. "fixed12"). If a value is not included in the "fixed" parameter, the maximum value will be used (i.e. for fonts, **max_font_size** will be used).
+
+**min_node_size**, **max_node_size**, **node_scaling** are the same as above, but for node circles.
+
+**min_edge_size**, **max_edge_size**, **edge_scaling** are the same as above, but for edge lines.
+
+**background_mode** (default: "black") - can be either "black" or "white". Try it out.
+
+**edge_style** (default: "curved") can be either "curved" or "straight". Try it out.
+
+**extra_vars** (default: None) This option allows additional data to be supplied to the class. Extra vars must be supplied in the format: {"var_name": n1:val, n2:val, ..}. All nodes in the graph should contain a label.
+
+**color_by** (default: "modularity") This option can be used to apply node coloring based on a different set of values. Values passed in via **extra_vars** can be used in this fashion.
+
+**size_by** (default: "out_degree") This option can be used to change node and label sizes based on a different set of values. By default, graphviz.py includes "in_degree" and "out_degree". Values passed in via **extra_vars** can be used in this fashion.
+
+**palette** (default: "intense") This option allows the user to switch between two default palettes: "intense" and "gradient". The "intense" palette is designed for coloring nodes based on modularity. If you wish to color nodes based on their values, use "gradient" (which provides a spectrum between red and blue).
+
+
 
 # graph.py
 
