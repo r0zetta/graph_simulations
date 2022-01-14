@@ -14,6 +14,7 @@ Here is a gephi-generated version of a graph generated in a similar manner:
 ![generated_3](media/generated_3.png)
 
 Here is an example of a visualization generated from captured Twitter data:
+![twitter](media/twitter.png)
 
 
 In order to use _graphviz.py_ you'll need to install the following:
