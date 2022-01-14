@@ -82,6 +82,9 @@ display(im) # if you're running this in a jupyter notebook
 
 **palette** (default: "intense") This option allows the user to switch between two default palettes: "intense" and "gradient". The "intense" palette is designed for coloring nodes based on modularity. If you wish to color nodes based on their values, use "gradient" (which provides a spectrum between red and blue).
 
+You can find example settings in some of the other scripts in this repo, including _graph_examples.ipynb_, _plot_timelapse.py_, and _test_graphviz.py_.
+
+Generally speaking, in order to find correct settings, start by passing your graph into graphviz and viewing the resulting output with default settings. Then add options to the gv=GraphViz() call and reiterate until satisfactory results have been achieved (in a similar way to working directly with gephi). Generating a new image should only take a few seconds (depending on the size of the graph, number of iterations, etc.)
 
 
 # graph.py
