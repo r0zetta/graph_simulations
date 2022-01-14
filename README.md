@@ -30,12 +30,11 @@ In order to use _graphviz.py_ you'll need to install the following:
 **pillow** (https://pillow.readthedocs.io/en/stable/)
 `pip install Pillow`
 
-In order to create a graph visualization, you'll need to create the following structures in python:
-
-A dict that describes a graph in the following format:
+In order to create a graph visualization, you'll need to assemble a Python dict that describes a graph in the following format:
 ```
 {s1:{t1:w, t2:w, t3:w...} s2:{t3:w, t4:w...}}
 ```
+Where _s_ is source, _t_ is target and _w_ is weight. Both sources and targets can be strings or integers. Weight must be a positive integer value.
 
 
 You thus create the graph visualization like this:
