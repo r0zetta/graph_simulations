@@ -64,7 +64,7 @@ display(im) # if you're running this in a jupyter notebook
 
 **min_font_size**, **max_font_size** denote minimum and maximum font sizes in the resulting visualization.
                  
-**font_scaling** (default: "lin") This variable determines how fonts scale with in-degree or out-degree. Values can be "lin" (lineraly), "pow" (highlights fewer labels) and "root" (highlights more labels than lin) or "fixed". Both the "pow" and "root" options can include a float (e.g. "pow2.5") that denotes the value. If no value is included (i.e. "pow") the value will be 2. The option "fixed" can include an integer value for the exact size (e.g. "fixed12"). If a value is not included in the "fixed" parameter, the maximum value will be used (i.e. for fonts, **max_font_size** will be used).
+**font_scaling** (default: "lin") This variable determines how fonts scale. Values can be "lin" (linearly), "pow" (highlights fewer labels), "root" (highlights more labels) or "fixed". Both the "pow" and "root" options can include a float (e.g. "pow2.5") that denotes the value. If no value is included (i.e. "pow") the value will be 2. The option "fixed" can include an integer value for the exact size (e.g. "fixed12"). If a value is not included in the "fixed" parameter, the maximum value will be used (i.e. for fonts, **max_font_size** will be used).
 
 **min_node_size**, **max_node_size**, **node_scaling** are the same as above, but for node circles.
 
