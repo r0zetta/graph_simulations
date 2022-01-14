@@ -115,7 +115,7 @@ The point of the graph.py tool is to allow researchers to create node-edge graph
 
 **num_nodes** (default:1000) is a value that is used in graph generation. It does not specifically determine the final number of nodes in a generated graph. However, the larger the **num_nodes** value, the larger the graph.
 
-**num_cores** (default: 1) in the initial phase of graph generation, a number of cores are created in the following way - a set of nodes (roughly equal to num_nodes/20 * num_cores) is created for each core. These nodes are then connected to one another based on the **intra_core_connectivity** variable. Cores are then connected together (based on variable described below), and additional nodes are finally added to the entire graph. The minimum value for **num_cores** is 1.
+**num_cores** (default: 1) in the initial phase of graph generation, a number of cores are created in the following way - a set of nodes (roughly equal to num_nodes/20 * num_cores) is created for each core. These nodes are then connected to one another based on the **intra_core_connectivity** variable. Cores are then connected together (based on **core_connectivity** and **connect_cores_directly**). Finally additional nodes and edges are added to the entire graph. The minimum value for **num_cores** is 1.
 
 **intra_core_connectivity** (default: 0.3) defines the density of connections inside the initially created cores. Higher values add more edges during initial core formation.
 
