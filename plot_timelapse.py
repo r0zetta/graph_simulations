@@ -27,24 +27,17 @@ def make_position(sn, sn_details):
             ypos = int(id_str[-4:])
     return (xpos, ypos)
 
-def get_stats(current_ind, slice_len, filename):
+def get_stats(current_ind, slice_len, filename, view):
     raw = load_slice(current_ind, slice_len, filename)
     full = get_counters_and_interactions2(raw)
     inter = full[view]
     sn_details = full['sn_details']
     pos = {}
-    in_degree = Counter()
-    out_degree = Counter()
     for source, targets in inter.items():
         pos[source] = make_position(source, sn_details)
         for target, count in targets.items():
             pos[target] = make_position(target, sn_details)
-            in_degree[target] += count
-            out_degree[source] += count
-    degree = in_degree
-    if sizes == "out_degree":
-        degree = out_degree
-    return inter, degree, pos
+    return inter, pos
 
 target = "UK_trolls_2021"
 filename = "../twitter_analysis/" + target + "/data/raw.json"
@@ -52,32 +45,22 @@ savedir = "figs_" + target
 if not os.path.exists(savedir):
     os.makedirs(savedir)
 
-sizes = "in_degree"
 view = "sn_rep"
-scaling = 5
-gravity = 20
-iterations = 100
-expand = 0.3
-eadjust = 0.4
-auto_zoom = True
-font_scaling = "lin"
-interpolation = "acc"
+num_steps = 10
 
 slice_len = 10000
-ind_inc = 500
-num_slices = 100
+ind_inc = 100
+num_slices = 1000
 
 slice_ind = 0
 current_ind = 0
 fig_index = 0
 
-inter, degree, pos = get_stats(current_ind, slice_len, filename)
+inter, pos = get_stats(current_ind, slice_len, filename, view)
 current_ind += ind_inc
 print("Getting slice " + str(slice_ind))
-gv1 = GraphViz(inter, degree, pos,
-               scaling=scaling, iterations=iterations, gravity=gravity,
-               expand=expand, eadjust=eadjust, auto_zoom=auto_zoom,
-               font_scaling=font_scaling, interpolation=interpolation)
+gv1 = GraphViz(inter, initial_pos=pos, size_by="in_degree",
+               font_scaling="root2.5", interpolation="acc")
 im = gv1.make_graphviz()
 fn = savedir + "/fig" + "%05d"%fig_index + ".png"
 print("Saving graphviz: " + fn)
@@ -86,14 +69,12 @@ fig_index += 1
 
 for n in range(num_slices):
     slice_ind += 1
-    inter, degree, pos = get_stats(current_ind, slice_len, filename)
+    inter, pos = get_stats(current_ind, slice_len, filename, view)
     current_ind += ind_inc
     print("Getting slice " + str(slice_ind))
-    gv2 = GraphViz(inter, degree, pos,
-                   scaling=scaling, iterations=iterations, gravity=gravity,
-                   expand=expand, eadjust=eadjust, auto_zoom=auto_zoom,
-                   font_scaling=font_scaling, interpolation=interpolation)
-    iml = gv1.interpolate(gv2)
+    gv2 = GraphViz(inter, initial_pos=pos, size_by="in_degree",
+                   font_scaling="root2.5", interpolation="acc")
+    iml = gv1.interpolate(gv2, num_steps = num_steps)
     for im in iml:
         fn = savedir + "/fig" + "%05d"%fig_index + ".png"
         print("Saving graphviz: " + fn)
@@ -102,6 +83,6 @@ for n in range(num_slices):
     gv1 = gv2
 
 image_files = [savedir + "/fig" + "%05d"%x + ".png" for x in range(fig_index)]
-clip = moviepy.video.io.ImageSequenceClip.ImageSequenceClip(image_files, fps=30)
+clip = moviepy.video.io.ImageSequenceClip.ImageSequenceClip(image_files, fps=20)
 clip.write_videofile("timelapse_" + target + ".mp4")
 # Change stuff in graph simulations to match this
