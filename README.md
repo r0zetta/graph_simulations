@@ -10,13 +10,7 @@ I have been using gephi (https://gephi.org/) for many years to visualize node-ed
 An example generated graph visualization looks like this:
 ![generated_3_gv](media/generated_3_gv.png)
 
-Here is a gephi-generated version of a graph generated in a similar manner:
-![generated_3](media/generated_3.png)
-
-Here is an example of a visualization generated from captured Twitter data:
-![twitter](media/twitter.png)
-
-And the same visualization using **background_mode** = "white"
+Here is an example of a visualization generated from captured Twitter data using **background_mode** = "white"
 ![white_mode](media/white_mode.png)
 
 In order to use _graphviz.py_ you'll need to install the following:
@@ -82,7 +76,7 @@ display(im) # if you're running this in a jupyter notebook
 
 **min_edge_size**, **max_edge_size**, **edge_scaling** are the same as above, but for edge lines.
 
-**background_mode** (default: "black") - can be either "black" or "white". Try it out.
+**background_mode** (default: "black") - can be either "black" or "white". An example was shown above.
 
 **edge_style** (default: "curved") can be either "curved" or "straight". Try it out.
 
