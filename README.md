@@ -346,7 +346,7 @@ The simulation found in politics_simulation.py does the following:
 1. Creates a graph using graph.py
 2. Assigns a number of "influencers" in each of the graphs's communities.
 3. For each community, a side (red or blue) is chosen. Chosen influencers in that community are assigned a high "voting intention" value. (Close to -1 for "blue" voting intention, and close to +1 for "red" voting intention).
-4. Voting intention in then propagated out to other nodes in the graph (see the code for how this is performed).
+4. Voting intention in then propagated out to other nodes in the graph based on each node's neighbours' voting intention (see the code for how this is performed).
 5. A number of steps are then run in which occasional scandals are simulated. Scandals affect the voting intention of all nodes in the graph. A scandal introduces a small non-integer value to the voting intention of all nodes, except those who are designated "solid voters" (voters whose voting intention values are very close to maximum or minimum).
 6. Voting intention is propagated.
 7. Election results are recorded based on voting intention values of all nodes. Each community simulates a constituency in which all members of the community vote. Votes occur based on a node's voting intention value. If the value is close enough to zero, the voter will abstain. Otherwise they'll vote "red" or "blue" based on how close their voting intention value is to upper or lower limits. The seat for that consituency is then assigned based on who won the most votes. This scenario is designed to model "first past the post" style elections such as those in the UK and US.
