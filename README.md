@@ -127,6 +127,24 @@ Graphs can be saved in csv and gefx formats using _write_csv(filename)_ and _wri
 g.write_gexf("graph.gexf")
 ```
 
+Additional node description parameters can be added to a graph using the _set_node_desc()_ function. This function takes three arguments:
+- name - a string used to name the column
+- vtype - a string representing the data type of values assigned (e.g. integer, float, etc.)
+- values - a dict containing nodeid, value for all nodes in the graph
+
+Here's an example that shows how community modularity values can be set:
+```
+g = Graph()
+
+communities = community.best_partition(g.nx_graph)
+nd = dict(communities)
+self.set_node_desc("community", "integer", nd)
+```
+
+Note that modularity values are automatically set when a graph is created. They are stored in a node_desc called "community".
+
+node_desc values are automatically included in gexf files, and so will show up in Gephi's data laboratory tab.
+
 The point of the graph.py tool is to allow researchers to create node-edge graphs with interesting properties. The properties of the generated graphs can be studied, and they can also be utilized in, for instance, simulations (more on that later). The Graph() initialization routine allows for the following parameters:
 
 **num_nodes** (default:1000) is a value that is used in graph generation. It does not specifically determine the final number of nodes in a generated graph. However, the larger the **num_nodes** value, the larger the graph.
