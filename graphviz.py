@@ -4,11 +4,12 @@ from fa2 import ForceAtlas2
 from PIL import Image, ImageDraw, ImageFont
 from collections import Counter
 import numpy as np
-import math
+import math, sys
 
 
 class GraphViz:
-    def __init__(self, inter, initial_pos=None, extra_vars=None,
+    def __init__(self, from_dict=None, from_mapping=None, from_nx=None,
+                 initial_pos=None, extra_vars=None,
                  mag_factor=1.0, scaling=5.0, gravity=20.0, iterations=100,
                  strong_gravity=False, dissuade_hubs=True, edge_weight_influence=1.0,
                  eadjust=0.5, expand=0.3, zoom=[[0.0,0.0],[1.0,1.0]], auto_zoom=True,
@@ -20,7 +21,20 @@ class GraphViz:
                  palette="intense", color_by="modularity", size_by="out_degree",
                  labels="nodeid", label_type="short",
                  interpolation="lin"):
-        self.inter = inter
+        self.inter = None
+        if from_dict is not None:
+            self.inter = from_dict
+        elif from_mapping is not None:
+            self.inter = self.inter_from_mapping(from_mapping)
+        elif from_nx is not None:
+            self.inter = self.inter_from_nx(from_nx)
+        else:
+            print("Please provide a valid graph using:")
+            print("from_dict=dict")
+            print("from_mapping=mapping")
+            print("or")
+            print("from_nx=nx")
+            sys.exit(0)
         self.initial_pos = initial_pos
         self.extra_vars = extra_vars
         if self.extra_vars is None:
@@ -39,16 +53,16 @@ class GraphViz:
         self.auto_zoom = auto_zoom
         self.min_font_size = min_font_size
         self.max_font_size = max_font_size
-        self.font_scaling = font_scaling # lin, pow, sqrt
+        self.font_scaling = font_scaling # lin, pow, root, fixed
         self.label_font = label_font
         self.min_node_size = min_node_size
         self.max_node_size = max_node_size
-        self.node_scaling = node_scaling # lin, pow, sqrt
+        self.node_scaling = node_scaling # lin, pow, root, fixed
         self.min_edge_size = min_edge_size
         self.max_edge_size = max_edge_size
-        self.edge_scaling = edge_scaling # lin, pow, sqrt
+        self.edge_scaling = edge_scaling # lin, pow, root, fixed
         self.edge_style = edge_style # curved, straight
-        self.background_mode = background_mode
+        self.background_mode = background_mode # white, black
         if self.background_mode == "black":
             self.background_color = (0,0,0)
             self.node_outline = (255,255,255)
@@ -94,6 +108,20 @@ class GraphViz:
         if palette == "gradient":
             self.color_palette = self.palette_gradient
         self.get_stats()
+
+    def inter_from_mapping(self, mapping):
+        inter = {}
+        for item in mapping:
+            source, target, weight = item
+            if source not in inter:
+                inter[source] = Counter()
+            inter[source][target] += weight
+        return inter
+
+    def inter_from_nx(self, nx):
+        inter = {}
+        mapping = list(nx.edges.data('weight'))
+        return self.inter_from_mapping(mapping)
 
     def hex_to_rgb(self, h):
         h = h.lstrip('#')
@@ -508,4 +536,12 @@ class GraphViz:
 
 # Add ability to provide multi-line labels, and display them in a nice box
 # e.g. for tweet text
+# Add ability to create graph using nx and using mapping
+# Add ability to load graph from csv
+
+# Add a more "glowy" visualization
+
+# Document graph.py functions (e.g. save, etc.)
+
+# Interpolate through multiple points as a bezier instead of just 2 points
 

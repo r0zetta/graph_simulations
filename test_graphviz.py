@@ -73,7 +73,7 @@ labels="nodeid"
 label_type="short"
 
 print("Making graph")
-gv = GraphViz(inter,
+gv = GraphViz(from_dict=inter,
               extra_vars = extra_vars,
               mag_factor = mag_factor,
               scaling = scaling,
