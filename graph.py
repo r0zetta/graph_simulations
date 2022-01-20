@@ -31,9 +31,6 @@ class Graph():
         self.connect_random = connect_random
         self.config = None
         if config is not None:
-            valid = self.validate_config(config)
-            if valid == False:
-                sys.exit(0)
             self.config = config
         self.nodeids = set()
         self.interactions = {}
@@ -114,13 +111,6 @@ class Graph():
         # Add mapping item
         self.mapping.append((source, target, weight))
 
-    def save_graph_csv(self, filename):
-        with open(filename, "w") as f:
-            f.write("Source,Target,Weight\n")
-            for source, targets in self.interactions.items():
-                for target, count in targets.items():
-                    f.write(str(source)+","+str(target)+","+str(count)+"\n")
-
     def make_mapping(self):
         mapping = []
         for source, targets in self.interactions.items():
@@ -184,24 +174,6 @@ class Graph():
         if len(second_neighbours) > 0:
             target = random.choice(list(second_neighbours))
             self.add_edge(nodeid, target)
-
-    def validate_config(self, config):
-        valid = True
-        sl_fields =   [["cores",
-                        "extra_nodes_random",
-                        "extra_nodes_popularity",
-                        "popularity_cutoff",
-                        "extra_edges_second_neighbour",
-                        "extra_edges_random"],
-                       ["core_core_connections",
-                        "core_core_connection_type"]]
-        for item in sl_fields:
-            base = len(config[item[0]])
-            for name in item[1:]:
-                if len(config[name]) != base:
-                    print("Field: " + str(name) + " should contain " + str(base) + " items.")
-                    valid = False
-        return valid
 
     def make_graph_from_config(self):
         cores = {}
@@ -356,6 +328,13 @@ class Graph():
                 cluster_indegree[x] = self.in_degree[x]
             msg += str(cluster_indegree.most_common(num))
             print(msg)
+
+    def write_csv(self, filename):
+        with open(filename, "w") as f:
+            f.write("Source,Target,Weight\n")
+            for source, targets in self.interactions.items():
+                for target, count in targets.items():
+                    f.write(str(source)+","+str(target)+","+str(count)+"\n")
 
     def write_gexf(self, filename):
         anames = []
