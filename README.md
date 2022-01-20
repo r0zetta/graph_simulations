@@ -156,7 +156,9 @@ A more details example using assigned node_desc values can be found in the later
 
 node_desc values are automatically included in gexf files, and so will show up in Gephi's data laboratory tab.
 
-The point of the graph.py tool is to allow researchers to create node-edge graphs with interesting properties. The properties of the generated graphs can be studied, and they can also be utilized in, for instance, simulations (more on that later). The Graph() initialization routine allows for the following parameters:
+The point of the graph.py tool is to allow researchers to create node-edge graphs with interesting properties. You no longer need to use the "karate" graph for everything! The properties of graphs generated with this tool may be interesting to study. Generated graphs can also be used to create simulations (more on that later). 
+
+The Graph() initialization routine allows for the following parameters:
 
 **num_nodes** (default:1000) is a value that is used in graph generation. It does not specifically determine the final number of nodes in a generated graph. However, the larger the **num_nodes** value, the larger the graph.
 
