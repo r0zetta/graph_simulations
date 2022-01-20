@@ -138,10 +138,21 @@ g = Graph()
 
 communities = community.best_partition(g.nx_graph)
 nd = dict(communities)
-self.set_node_desc("community", "integer", nd)
+g.set_node_desc("community", "integer", nd)
 ```
 
 Note that modularity values are automatically set when a graph is created. They are stored in a node_desc called "community".
+
+Here's another example, assigning random floats to each node:
+```
+g = Graph()
+node_desc = {}
+for n in g.nodeids:
+    node_desc[n] = random.uniform(0,1)
+g.set_node_desc("random", "float", node_desc)
+```
+
+A more details example using assigned node_desc values can be found in the later section that descibes how to use graph.py in simulations.
 
 node_desc values are automatically included in gexf files, and so will show up in Gephi's data laboratory tab.
 
