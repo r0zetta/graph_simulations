@@ -137,9 +137,11 @@ scandal_effect = 0.75
 scandal_max_chance = 0.75
 scandal_population_affected=0.3
 waver = 0.5
-move_nodes = int(num_nodes * 0.005)
+#move_nodes = int(num_nodes * 0.005)
+move_nodes = 0
 move_every = 25
-change_weights = int(num_nodes * 0.01)
+#change_weights = int(num_nodes * 0.01)
+change_weights = 0
 change_every = 50
 num_steps = 10000
 
@@ -156,7 +158,6 @@ graph = Graph(num_nodes=num_nodes,
               connect_second_neighbours=connect_second_neighbours,
               move_nodes_second_neighbour=move_nodes_second_neighbour,
               connect_random=connect_random)
-graph.save_graph_csv("graph.csv")
 graph.print_community_stats()
 g_nodes = len(graph.nodeids)
 
