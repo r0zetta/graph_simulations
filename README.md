@@ -356,6 +356,7 @@ Running the simulation for a few thousand steps generates a plot like the follow
 
 ![politics_simulation](media/politics_simulation.png)
 
+The above demonstrates that, while scandals alter short-term voting intention, it eventually returns to its original equilibrium when no scandals are happening. Thus it is best to "strike while the iron is hot" if your party is polling favourably.
 
 
 # plot_timelapse.py - using graphviz interpolation to create timelapse animations
