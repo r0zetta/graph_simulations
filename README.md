@@ -3,6 +3,13 @@ Synthesising graphs and simulating things
 
 This repository contains tools for creating, manipulating, and visualizing node-edge network graph representations. It also contains some code that puts those tools to use. The tools are described in the following sections.
 
+# TL;DR
+
+If you want to learn how to create gephi-like graphviz images, go to the *graphviz.py* section
+If you want to learn how to create diverse and interesting synthetic graphs for your own use, go to the *graph.py* section
+If you want to learn how to create simulations using *graph.py*, go to the *politics_simulation.py* section
+If you want to learn how to create graphviz animations, go to the *plot_timelapse.py* section
+
 # graphviz.py
 
 I have been using gephi (https://gephi.org/) for many years to visualize node-edge graphs in an appealing and eye-catching manner. Even though the tool is straighforward to use and contains many useful features, I have always wanted for a programmatic method to generate similarly visually appealing graph plots. Unfortunately, the options available don't hold a candle to gephi. As such, I decided to create a tool capable of creating visualizations similar to those that can be generated with gephi.
