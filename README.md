@@ -361,6 +361,22 @@ The above demonstrates that, while scandals alter short-term voting intention, i
 
 # plot_timelapse.py - using graphviz interpolation to create timelapse animations
 
+Real-world social network data is temporal in nature. Graph visualizations can be constructed from slices of this data. However, it would be interesting to observe such data as an animation across a sliding window. Whilst gephi does have a way of animating data across a sliding window, the animation produced is based on a layout constructed from the entire timeslice. In order to view an animated graph visualization of multiple timeslices of social media data, it would be better to create multiple frames derived from layouts made of each timeslice. However, layout creation is non-deterministic, and thus assembling a video constructed of layouts created from different timeslices will "jitter" around way too much. One way to prevent this is to smoothly animate node position transitions between each created layout. This is what plot_timelapse.py demonstrates.
+
+It works in the following manner:
+
+1. Read from a file containing raw json tweet objects (one per line) that were captured from streaming Twitter data.
+2. Obtain a slice starting at position p and ending at position p+n
+3. Process the raw data, extracting interactions between accounts (e.g. accounts that retweeted other accounts, accounts that replied to other accounts, etc.)
+4. Create an interactions dict using the selected data representation.
+5. Create a graphviz object using the interactions dict. Append it to a list.
+6. Repeat all steps for the next slice, and so on until all required slices have been collected.
+7. Pass the list of graphviz objects into the GraphViz _interpolate_multiple()_ function. This function will create a number of frames that smoothly animate nodes between each layout supplied. The function writes each frame to disk as a png image.
+8. Combine all png images into a video.
+
+How does _interpolate_multiple()_ work?
+
+
 
 
 
