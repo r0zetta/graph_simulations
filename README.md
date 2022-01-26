@@ -1,7 +1,7 @@
 # graph_simulations
 Synthesising graphs and simulating things
 
-This repository contains tools for creating, manipulating, and visualizing node-edge network graph representations. It also contains some code that puts those tools to use. The tools are described in the following sections.
+This repository contains tools for creating, manipulating, and visualizing node-edge network graph representations. It also contains some code that puts those tools to use.
 
 # TL;DR
 
