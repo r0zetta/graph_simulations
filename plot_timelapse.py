@@ -50,39 +50,25 @@ num_steps = 10
 
 slice_len = 10000
 ind_inc = 100
-num_slices = 1000
+num_slices = 10
 
 slice_ind = 0
 current_ind = 0
-fig_index = 0
 
-inter, pos = get_stats(current_ind, slice_len, filename, view)
-current_ind += ind_inc
-print("Getting slice " + str(slice_ind))
-gv1 = GraphViz(inter, initial_pos=pos, size_by="in_degree",
-               font_scaling="root2.5", interpolation="acc")
-im = gv1.make_graphviz()
-fn = savedir + "/fig" + "%05d"%fig_index + ".png"
-print("Saving graphviz: " + fn)
-im.save(fn)
-fig_index += 1
+glist = []
 
 for n in range(num_slices):
     slice_ind += 1
     inter, pos = get_stats(current_ind, slice_len, filename, view)
     current_ind += ind_inc
-    print("Getting slice " + str(slice_ind))
-    gv2 = GraphViz(inter, initial_pos=pos, size_by="in_degree",
-                   font_scaling="root2.5", interpolation="acc")
-    iml = gv1.interpolate(gv2, num_steps = num_steps)
-    for im in iml:
-        fn = savedir + "/fig" + "%05d"%fig_index + ".png"
-        print("Saving graphviz: " + fn)
-        im.save(fn)
-        fig_index += 1
-    gv1 = gv2
+    print("Getting slice " + str(slice_ind) + " / " + str(num_slices))
+    gv = GraphViz(inter, initial_pos=pos, size_by="in_degree",
+                  font_scaling="root2.5")
+    glist.append(gv)
 
-image_files = [savedir + "/fig" + "%05d"%x + ".png" for x in range(fig_index)]
+gv0 = glist[0]
+gv0.interpolate_multiple(glist, savedir, num_steps=num_steps)
+
+image_files = [savedir + "/fig" + "%05d"%x + ".png" for x in range(num_steps*num_slices)]
 clip = moviepy.video.io.ImageSequenceClip.ImageSequenceClip(image_files, fps=20)
 clip.write_videofile("timelapse_" + target + ".mp4")
-# Change stuff in graph simulations to match this

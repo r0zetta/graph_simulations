@@ -159,23 +159,20 @@ class GraphViz:
         cp.append(p2)
         return cp
 
-    def make_bezier(self, xys):
-        n = len(xys)
+    def make_bezier(self, control_points, num_steps):
+        n = len(control_points)
         combinations = self.pascal_row(n-1)
-        def bezier(ts):
-            result = []
-            for t in ts:
-                tpowers = (t**i for i in range(n))
-                upowers = reversed([(1-t)**i for i in range(n)])
-                coefs = [c*a*b for c, a, b in zip(combinations, tpowers, upowers)]
-                result.append(
-                    tuple(sum([coef*p for coef, p in zip(coefs, ps)]) for ps in zip(*xys)))
-            return result
-        return bezier
+        ts = [t/num_steps for t in range(num_steps+1)]
+        result = []
+        for t in ts:
+            tpowers = (t**i for i in range(n))
+            upowers = reversed([(1-t)**i for i in range(n)])
+            coefs = [c*a*b for c, a, b in zip(combinations, tpowers, upowers)]
+            result.append(
+                tuple(sum([coef*p for coef, p in zip(coefs, ps)]) for ps in zip(*control_points)))
+        return result
 
-    def pascal_row(self, n, memo={}):
-        if n in memo:
-            return memo[n]
+    def pascal_row(self, n):
         result = [1]
         x, numerator = 1, n
         for denominator in range(1, n//2+1):
@@ -184,11 +181,9 @@ class GraphViz:
             result.append(x)
             numerator -= 1
         if n&1 == 0:
-            # n is even
             result.extend(reversed(result[:-1]))
         else:
             result.extend(reversed(result))
-        memo[n] = result
         return result
 
     def convert_coords(self, x, y, pos):
@@ -309,11 +304,11 @@ class GraphViz:
         self.G.add_weighted_edges_from(mapping)
         self.communities = louvain.best_partition(self.G)
 
-        self.clusters = {}
+        clusters = {}
         for node, mod in self.communities.items():
-            if mod not in self.clusters:
-                self.clusters[mod] = []
-            self.clusters[mod].append(node)
+            if mod not in clusters:
+                clusters[mod] = []
+            clusters[mod].append(node)
 
         FA2 = ForceAtlas2(self.G,
                           #outboundAttractionDistribution=self.dissuade_hubs,
@@ -337,10 +332,15 @@ class GraphViz:
         self.expand_graph()
 
         modularity_class = {}
-        for community_number, community in self.clusters.items():
+        for community_number, community in clusters.items():
             for name in community: 
                 modularity_class[name] = community_number
         self.extra_vars["modularity"] = modularity_class
+
+    def set_from_graph(self, g):
+        self.inter = g.inter
+        self.positions = g.positions
+        self.extra_vars = g.extra_vars
 
     def set_size(self, s, max_v, min_s, max_s, style):
         sf = min_s
@@ -399,9 +399,7 @@ class GraphViz:
 
     def draw_edge_curved(self, p1, p2, w, c):
         control_points = self.get_control_points(p1, p2)
-        bez = self.make_bezier(control_points)
-        ts = [t/100.0 for t in range(101)]
-        points = bez(ts)
+        points = self.make_bezier(control_points, 100)
         for index in range(len(points)-1):
             x1 = points[index][0]
             y1 = points[index][1]
@@ -492,7 +490,7 @@ class GraphViz:
 
         return self.im
 
-    def interpolate(self, g2, num_steps=10):
+    def interpolate_next(self, g2, num_steps=10):
         iml = []
         g1_sns = set([x for x, c in self.positions.items()])
         g2_sns = set([x for x, c in g2.positions.items()])
@@ -530,14 +528,50 @@ class GraphViz:
             iml.append(self.make_graphviz())
         return iml
 
+    def interpolate_multiple(self, glist, savedir, num_steps=10):
+        sn_cp = {}
+        sn_start = {}
+        all_sns = set()
+        prev_sns = set()
+        for index, g in enumerate(glist):
+            cur_sns = set()
+            for sn, pos in g.positions.items():
+                all_sns.add(sn)
+                cur_sns.add(sn)
+                if sn not in sn_start:
+                    sn_start[sn] = index
+                if sn not in sn_cp:
+                    sn_cp[sn] = []
+                sn_cp[sn].append(pos)
+                prev_sns = set(cur_sns)
+        sn_points = {}
+        for sn, cp in sn_cp.items():
+            steps = num_steps*(len(cp))
+            if steps > 0:
+                points = self.make_bezier(cp, steps)
+                sn_points[sn] = points
+        total_frames = num_steps * len(glist)
+        for index, g in enumerate(glist):
+            sns = [x for x, c in g.positions.items()]
+            for step in range(num_steps):
+                frame = (index * num_steps) + step
+                print("Making frame: " + str(frame) + " / " + str(total_frames))
+                for sn in sns:
+                    if sn in sn_start and sn in sn_points:
+                        start_ind = sn_start[sn]
+                        points_index = frame - (start_ind*num_steps)
+                        if len(sn_points[sn]) > points_index:
+                            node_pos = sn_points[sn][points_index]
+                            g.positions[sn] = [node_pos[0], node_pos[1]]
+                im = g.make_graphviz()
+                im.save(savedir + "/frame" + "%05d"%frame + ".png")
+
     def make_graphviz(self):
         self.draw_image()
         return self.im
 
 # Add ability to provide multi-line labels, and display them in a nice box
 # e.g. for tweet text
-# Add ability to create graph using nx and using mapping
-# Add ability to load graph from csv
 
 # Add a more "glowy" visualization
 
