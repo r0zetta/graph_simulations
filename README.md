@@ -164,7 +164,7 @@ for n in g.nodeids:
 g.set_node_desc("random", "float", node_desc)
 ```
 
-A more details example using assigned node_desc values can be found in the later section that descibes how to use graph.py in simulations.
+A more detailed example using assigned node_desc values can be found in the later section that descibes how to use graph.py in simulations.
 
 node_desc values are automatically included in gexf files, and so will show up in Gephi's data laboratory tab.
 
