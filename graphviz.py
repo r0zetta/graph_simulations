@@ -532,22 +532,38 @@ class GraphViz:
             iml.append(self.make_graphviz())
         return iml
 
+    def map_community_labels(self, g1, g2):
+        mod1 = g1.extra_vars["modularity"]
+        mod2 = g2.extra_vars["modularity"]
+        id1 = g1.extra_vars["in_degree"]
+        clusters = {}
+        for x, c in mod1.items():
+            if c not in clusters:
+                clusters[c] = []
+            clusters[c].append(x)
+        cluster_in_deg = {}
+        mod_map = {}
+        for x, c in clusters.items():
+            cluster_in_deg[x] = Counter()
+            for sn in c:
+                cluster_in_deg[x][sn] = id1[sn]
+            key_sns = [x for x, c in cluster_in_deg[x].most_common(20)]
+            for key in key_sns:
+                if key in mod2:
+                    mod_map[mod2[key]] = x
+                    break
+        return mod_map
+
     def interpolate_multiple(self, glist, savedir, num_steps=10):
         sn_cp = {}
         sn_start = {}
-        all_sns = set()
-        prev_sns = set()
         for index, g in enumerate(glist):
-            cur_sns = set()
             for sn, pos in g.positions.items():
-                all_sns.add(sn)
-                cur_sns.add(sn)
                 if sn not in sn_start:
                     sn_start[sn] = index
                 if sn not in sn_cp:
                     sn_cp[sn] = []
                 sn_cp[sn].append(pos)
-                prev_sns = set(cur_sns)
         sn_points = {}
         for sn, cp in sn_cp.items():
             steps = num_steps*(len(cp))
@@ -556,6 +572,12 @@ class GraphViz:
                 sn_points[sn] = points
         total_frames = num_steps * len(glist)
         for index, g in enumerate(glist):
+            mod_map = None
+            if index > 0:
+                mod_map = self.map_community_labels(glist[0], glist[index])
+                for sn, m in g.extra_vars["modularity"].items():
+                    if m in mod_map:
+                        g.extra_vars["modularity"][sn] = mod_map[m]
             sns = [x for x, c in g.positions.items()]
             for step in range(num_steps):
                 frame = (index * num_steps) + step
@@ -579,7 +601,4 @@ class GraphViz:
 
 # Add a more "glowy" visualization
 
-# Document graph.py functions (e.g. save, etc.)
-
-# Interpolate through multiple points as a bezier instead of just 2 points
-
+# Figure out a way of keeping modularity class across multiple graphs

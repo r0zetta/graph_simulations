@@ -46,22 +46,20 @@ if not os.path.exists(savedir):
     os.makedirs(savedir)
 
 view = "sn_rep"
-num_steps = 20
+num_steps = 5
 
 slice_len = 10000
-ind_inc = 200
-num_slices = 90
+ind_inc = 100
+num_slices = 360
 
-slice_ind = 0
 current_ind = 0
 
 glist = []
 
 for n in range(num_slices):
-    slice_ind += 1
     inter, pos = get_stats(current_ind, slice_len, filename, view)
     current_ind += ind_inc
-    print("Getting slice " + str(slice_ind) + " / " + str(num_slices))
+    print("Getting slice " + str(n) + " / " + str(num_slices))
     gv = GraphViz(inter, initial_pos=pos, size_by="in_degree",
                   font_scaling="root2.5")
     glist.append(gv)
