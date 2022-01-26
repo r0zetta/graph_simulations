@@ -107,6 +107,7 @@ class GraphViz:
         self.color_palette = self.palette_intense
         if palette == "gradient":
             self.color_palette = self.palette_gradient
+        self.pascal_memo = {}
         self.get_stats()
 
     def inter_from_mapping(self, mapping):
@@ -173,6 +174,8 @@ class GraphViz:
         return result
 
     def pascal_row(self, n):
+        if n in self.pascal_memo:
+            return self.pascal_memo[n]
         result = [1]
         x, numerator = 1, n
         for denominator in range(1, n//2+1):
@@ -184,6 +187,7 @@ class GraphViz:
             result.extend(reversed(result[:-1]))
         else:
             result.extend(reversed(result))
+        self.pascal_memo[n] = result
         return result
 
     def convert_coords(self, x, y, pos):

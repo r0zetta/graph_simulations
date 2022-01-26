@@ -46,11 +46,11 @@ if not os.path.exists(savedir):
     os.makedirs(savedir)
 
 view = "sn_rep"
-num_steps = 10
+num_steps = 20
 
 slice_len = 10000
-ind_inc = 100
-num_slices = 10
+ind_inc = 200
+num_slices = 90
 
 slice_ind = 0
 current_ind = 0
@@ -69,6 +69,6 @@ for n in range(num_slices):
 gv0 = glist[0]
 gv0.interpolate_multiple(glist, savedir, num_steps=num_steps)
 
-image_files = [savedir + "/fig" + "%05d"%x + ".png" for x in range(num_steps*num_slices)]
+image_files = [savedir + "/frame" + "%05d"%x + ".png" for x in range(num_steps*num_slices)]
 clip = moviepy.video.io.ImageSequenceClip.ImageSequenceClip(image_files, fps=20)
 clip.write_videofile("timelapse_" + target + ".mp4")
