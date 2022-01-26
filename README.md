@@ -383,7 +383,6 @@ It works in the following manner:
 
 How does _interpolate_multiple()_ work?
 
-
-
-
-
+1. Nodes are moved by plotting a bezier curve across all points extracted from layouts.
+2. Modularity values are mapped back to the values represented in the first input layout, to preserve color schemes.
+3. To attempt to make layouts somewhat deterministic, initial positions are derived from users' Twitter id_str first and last 4 digits.
