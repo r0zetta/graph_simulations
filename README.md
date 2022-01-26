@@ -5,10 +5,10 @@ This repository contains tools for creating, manipulating, and visualizing node-
 
 # TL;DR
 
-If you want to learn how to create gephi-like graphviz images, go to the *graphviz.py* section
-If you want to learn how to create diverse and interesting synthetic graphs for your own use, go to the *graph.py* section
-If you want to learn how to create simulations using *graph.py*, go to the *politics_simulation.py* section
-If you want to learn how to create graphviz animations, go to the *plot_timelapse.py* section
+- If you want to learn how to create gephi-like graphviz images, go to the *graphviz.py* section
+- If you want to learn how to create diverse and interesting synthetic graphs for your own use, go to the *graph.py* section
+- If you want to learn how to create simulations using *graph.py*, go to the *politics_simulation.py* section
+- If you want to learn how to create graphviz animations, go to the *plot_timelapse.py* section
 
 # graphviz.py
 
