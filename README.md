@@ -357,15 +357,15 @@ A jupyter notebook for playing around with and testing different configuration o
 
 # politics_simulation.py - using graph.py to create simulations
 
-The reason I created graph.py was that I wanted to create a simple political simulation designed to determine how scandals affect voting intention. There are plenty of example snippets available for creating graphs from scratch, and I played with a few of them. However, having worked extensively with graphs in the past - especially with graphs derived from social network interactions - I decided to create a script capable of creating the various types of graphs I've seen in my research. While creating this tool I also added functionality designed to assist in the creation of simulations.
+The reason I created graph.py was that I wanted to create a simple political simulation designed to determine how scandals affect voting intention. Having worked extensively with graphs in the past - especially with graphs derived from social network interactions - I decided to create a script capable of creating the various types of graphs I've seen in my research. While creating this tool I also added functionality designed to assist in the creation and running of simulations.
 
-The simulation found in politics_simulation.py does the following:
+Using graph.py to run a simulation is best illustrated by example. I have included a toy simulation (politics_simulation.py) in this repository that does the following:
 1. Creates a graph using graph.py
-2. Assigns a number of "influencers" in each of the graphs's communities.
-3. For each community, a side (red or blue) is chosen. Chosen influencers in that community are assigned a high "voting intention" value. (Close to -1 for "blue" voting intention, and close to +1 for "red" voting intention). Voting intention is assigned to each node using graph.py's _set_node_desc()_ function that was described earlier.
+2. Randomly picks a number of "influencer" nodes from each of the graphs's communities.
+3. For each community, a political party (red or blue) is chosen at random. Chosen influencers in that community are assigned high "voting intention" values. (Close to -1 for "blue" voting intention, and close to +1 for "red" voting intention). Voting intention is assigned to each node using graph.py's _set_node_desc()_ function that was described earlier.
 4. Voting intention in then propagated out to other nodes in the graph based on each node's neighbours' voting intention (see the code for how this is performed). This process utilizes graph.py's functions for finding neighbouring nodes, such as get_neighbours(), get_incoming_weights(), and get_outgoing_weights().
 5. A number of steps are then run in which occasional scandals are simulated. Scandals affect the voting intention of all nodes in the graph. A scandal introduces a small non-integer value to the voting intention of all nodes, except those who are designated "solid voters" (voters whose voting intention values are very close to maximum or minimum).
-6. Voting intention is propagated.
+6. Voting intention is propagated again.
 7. Election results are recorded based on voting intention values of all nodes. Each community simulates a constituency in which all members of the community vote. Votes occur based on a node's voting intention value. If the value is close enough to zero, the voter will abstain. Otherwise they'll vote "red" or "blue" based on how close their voting intention value is to upper or lower limits. The seat for that consituency is then assigned based on who won the most votes. This scenario is designed to model "first past the post" style elections such as those in the UK and US.
 8. Steps 5-7 are then repeated. Votes and seats are constantly recorded and graphed.
 
@@ -373,22 +373,22 @@ Running the simulation for a few thousand steps generates a plot like the follow
 
 ![politics_simulation](media/politics_simulation.png)
 
-The above demonstrates that, while scandals alter short-term voting intention, it eventually returns to its original equilibrium when no scandals are happening. Thus it is best to "strike while the iron is hot" if your party is polling favourably.
+The above demonstrates that, while scandals alter short-term voting intention, it eventually returns to its original equilibrium when no scandals are happening. Thus it is best to "strike while the iron is hot" and call an election if your party is polling favourably.
 
 
 # plot_timelapse.py - using graphviz interpolation to create timelapse animations
 
-Real-world social network data is temporal in nature. Graph visualizations can be constructed from slices of this data. However, it would be interesting to observe such data as an animation across a sliding window. Whilst gephi does have a way of animating data across a sliding window, the animation produced is based on a layout constructed from the entire timeslice. In order to view an animated graph visualization of multiple timeslices of social media data, it would be better to create multiple frames derived from layouts made of each timeslice. However, layout creation is non-deterministic, and thus assembling a video constructed of layouts created from different timeslices will "jitter" around way too much. One way to prevent this is to smoothly animate node position transitions between each created layout. This is what plot_timelapse.py demonstrates.
+Real-world social network data is temporal in nature. Static graph visualizations can be constructed from slices of this data. However, it would be interesting to observe such data as an animation across a sliding window. Whilst gephi does have a way of animating data across a sliding window, the animation produced is based on a layout constructed from the entire timeslice. In order to view an animated graph visualization of multiple timeslices of social media data, it would be better to create multiple frames derived from layouts made of each timeslice. However, layout creation is non-deterministic, and thus assembling a video constructed of layouts created from different timeslices will "jitter" around way too much. One way to prevent this is to smoothly animate node position transitions between each created layout. This is what plot_timelapse.py demonstrates.
 
 It works in the following manner:
 
 1. Read from a file containing raw json tweet objects (one per line) that were captured from streaming Twitter data.
-2. Obtain a slice starting at position p and ending at position p+n
+2. Obtain a slice starting at position p and ending at position p+n.
 3. Process the raw data, extracting interactions between accounts (e.g. accounts that retweeted other accounts, accounts that replied to other accounts, etc.)
 4. Create an interactions dict using the selected data representation.
-5. Create a graphviz object using the interactions dict. Append it to a list.
-6. Repeat all steps for the next slice, and so on until all required slices have been collected.
-7. Pass the list of graphviz objects into the GraphViz _interpolate_multiple()_ function. This function will create a number of frames that smoothly animate nodes between each layout supplied. The function writes each frame to disk as a png image.
+5. Create a graphviz object using the interactions dict. Append it to a list of Graph() objects.
+6. Repeat all steps for the next slice, and so on, until all required slices have been collected.
+7. Pass the list of graphviz objects into the GraphViz _interpolate_multiple()_ function. This function will create a number of frames that smoothly animate nodes between each layout. The function writes each frame to disk as a png image.
 8. Combine all png images into a video.
 
 How does _interpolate_multiple()_ work?
@@ -396,3 +396,5 @@ How does _interpolate_multiple()_ work?
 1. Nodes are moved by plotting a bezier curve across all points extracted from layouts.
 2. Modularity values are mapped back to the values represented in the first input layout, to preserve color schemes.
 3. To attempt to make layouts somewhat deterministic, initial positions are derived from users' Twitter id_str first and last 4 digits.
+
+The animation near the top of this report illustrates the output of such a process.
