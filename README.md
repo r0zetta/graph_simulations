@@ -1,9 +1,9 @@
 # graph_simulations
 Synthesising graphs and simulating things
 
-This repository contains tools for creating, manipulating, and visualizing node-edge network graph representations. It also contains some code that puts those tools to use.
+This repository contains tools for creating, manipulating, and visualizing node-edge network graph representations. It also contains some example code that puts those tools to use.
 
-# TL;DR
+## TL;DR
 
 - If you want to learn how to create gephi-like graphviz images, go to the [graphviz.py](https://github.com/r0zetta/graph_simulations/blob/main/README.md#graphvizpy) section
 - If you want to learn how to create diverse and interesting synthetic graphs for your own use, go to the [graph.py](https://github.com/r0zetta/graph_simulations/blob/main/README.md#graphpy) section
@@ -12,10 +12,23 @@ This repository contains tools for creating, manipulating, and visualizing node-
 
 ![animated_timelapse](media/animated_timelapse.gif)
 
+## Using graph.py and graphviz.py together
+
+Graph.py and graphviz.py can be easily used together in the following manner. Download this repository and copy graph.py and graphviz.py to the folder where you're writing your code. Import both files at the beginning of your script. Here's an example:
+```
+from graph import *
+from graphviz import *
+
+g = Graph() # Set options for graph generation
+gv = GraphViz(from_dict=g.interactions) # Add additional visualization options
+im = gv.make_graphviz()
+im.save("graphviz.png")
+display(im) # If running in a jupyter notebook
+```
 
 # graphviz.py
 
-I have been using gephi (https://gephi.org/) for many years to visualize node-edge graphs in an appealing and eye-catching manner. Even though the tool is straighforward to use and contains many useful features, I have always wanted for a programmatic method to generate similarly visually appealing graph plots. Unfortunately, currently available options that I found on the internet either cost money or aren't capable or generating visualizations nearly as good as gephi. As such, I decided to create my own tool that is capable of creating visualizations similar to those that can be generated with gephi.
+I have been using gephi (https://gephi.org/) for many years to visualize node-edge graphs in an appealing and eye-catching manner. Even though the tool is straighforward to use and contains many useful features, I have always wished for a programmatic method to generate similarly visually appealing graph plots. Unfortunately, currently available tools either cost money or aren't capable or generating visualizations nearly as nice looking as those created by gephi. With this in mind, I decided to create a tool capable of generating graph visualizations similar to those that gephi outputs. That tool is graphviz.py.
 
 An graph visualiztion generated with graphviz.py looks like this:
 ![generated_3_gv](media/generated_3_gv.png)
@@ -42,27 +55,31 @@ In order to use _graphviz.py_ you'll need to install the following:
 **pillow** (https://pillow.readthedocs.io/en/stable/)
 `pip install Pillow`
 
-Graph visualizations can be created in three different ways:
+A GraphViz object can be created in three different ways:
 
-1. Initializing a GraphViz object using from_dict=dict. This takes a python dict that describes a graph in the following format:
+1. Initialize a GraphViz object using from_dict=dict. This takes a python dict that describes a graph in the following format:
 ```
 {s1:{t1:w, t2:w, t3:w...} s2:{t3:w, t4:w...}}
 ```
 Where _s_ is source, _t_ is target and _w_ is weight. Both sources and targets can be strings or integers. Weight must be a positive integer value.
 
-2. Initializing a GraphViz object using from_mapping=mapping. This takes a list in the following format:
+2. Initialize a GraphViz object using from_mapping=mapping. This takes a list in the following format:
 ```
 [[s, t, w], [s, t, w], ..., [s, t, w]]
 ```
 Where _s_ is source, _t_ is target and _w_ is weight.
 
-3. Initializing a GraphViz object using from_nx=nx. This takes a previously created networkx object.
+3. Initialize a GraphViz object using from_nx=nx. This takes a networkx object as input.
 
-Only use one of these three initializations.
+Make sure to only initialize a GraphViz object using one of these three methods.
 
-You thus create the graph visualization like this:
+Creating a graph visualization using a dict looks like this:
 ```
 from graphviz import *
+
+interactions = {}
+# Parse some data to create an interactions dict
+# Your own code goes here
 
 gv = GraphViz(from_dict=interactions)
 im = gv.make_graphviz()
@@ -71,6 +88,8 @@ display(im) # if you're running this in a jupyter notebook
 ```
 
 ## Options
+
+The GraphViz __init__() takes optional parameters that allow the user to adjust the final graphical output of the module. Some of those parameters are described below.
 
 **mag_factor** (default: 1.0) Defines the size of the image output. At a value of 1.0, the size of the image is 1200 x 1200. Setting this to 4.0 or higher will allow even the smallest labels on a resulting image to be examined.
 
@@ -82,7 +101,7 @@ display(im) # if you're running this in a jupyter notebook
                  
 **eadjust** (default: 0.5) Applies slight dimming to edges, in-line with how gephi plots graphs. A lower value creates dimmer edges.
 
-**expand** (default: 0.3) Equivalent to gephi's expand transformation. Moves all nodes away from the center point by the defined factor. Note that this will expand the canvas, resulting in a larger image.
+**expand** (default: 0.3) Equivalent to gephi's expand transformation. Moves all nodes away from the center point by a defined factor. Note that this will expand the canvas, resulting in a larger image.
 
 **zoom** (default: [[0.0,0.0],[1.0,1.0]]) A manual method for zooming into the graph. The first two values represent how far from the left and top edges to zoom, the second two values represent right and bottom edges.
 
@@ -92,17 +111,17 @@ display(im) # if you're running this in a jupyter notebook
 
 **min_font_size**, **max_font_size** denote minimum and maximum font sizes in the resulting visualization.
                  
-**font_scaling** (default: "lin") This variable determines how fonts scale. Values can be "lin" (linearly), "pow" (highlights fewer labels), "root" (highlights more labels) or "fixed". Both the "pow" and "root" options can include a float (e.g. "pow2.5") that denotes the value. If no value is included (i.e. "pow") the value will be 2. The option "fixed" can include an integer value for the exact size (e.g. "fixed12"). If a value is not included in the "fixed" parameter, the maximum value will be used (i.e. for fonts, **max_font_size** will be used). Generally speaking, in order to get a complex graph visualization into a presentable state, you want only some labels to be readable. This is achieved by altering **min_font_size**, **max_font_size** and **font_scaling**. If the distribution of values used to set label size is high, "lin" or "root" may be better. If the distribution os low, try "pow". For simple graphs, "fixed" may be the best option. This advice also applies to node sizing.
+**font_scaling** (default: "lin") This variable determines how fonts scale. Values can be "lin" (linear), "pow" (highlights fewer labels), "root" (highlights more labels) or "fixed". These are roughly equivalent to gephi's "spline" functionality. Both the "pow" and "root" options can include a float value (e.g. "pow2.5"). If no value is included (i.e. "pow") the value will be 2. The option "fixed" can include an integer value for the exact size (e.g. "fixed12"). If a value is not included in the "fixed" parameter, the maximum value will be used (i.e. for fonts, **max_font_size** will be used). Generally speaking, in order to get a complex graph visualization into a presentable state, you want only some labels to be readable. This is achieved by altering **min_font_size**, **max_font_size** and **font_scaling**. If the distribution of values used to set label size is high, "lin" or "root" may be better. If the distribution os low, try "pow". For simple graphs, "fixed" may be the best option. This advice also applies to node sizing.
 
 **min_node_size**, **max_node_size**, **node_scaling** are the same as above, but for node circles.
 
 **min_edge_size**, **max_edge_size**, **edge_scaling** are the same as above, but for edge lines.
 
-**background_mode** (default: "black") - can be either "black" or "white". An example was shown above.
+**background_mode** (default: "black") - can be either "black" or "white". Examples were shown above.
 
-**edge_style** (default: "curved") can be either "curved" or "straight". Try it out.
+**edge_style** (default: "curved") can be either "curved" or "straight".
 
-**extra_vars** (default: None) This option allows additional data to be supplied to the class. Extra vars must be supplied in the format: {"var_name": n1:val, n2:val, ..}. All nodes in the graph should contain a label.
+**extra_vars** (default: None) This option allows additional data to be supplied to the GraphViz object. Extra vars must be supplied in the format: {"var_name": n1:val, n2:val, ..}. All nodes in the graph should contain a label.
 
 **color_by** (default: "modularity") This option can be used to apply node coloring based on a different set of values. Values passed in via **extra_vars** can be used in this fashion.
 
@@ -117,7 +136,7 @@ Generally speaking, in order to find correct settings, start by passing your gra
 
 # graph.py
 
-graph.py is a python program for creating node-edge graphs from scratch. The tool is highly configurable, allowing for the creation of many distinct node-edge graph phenotypes. The tool requires you have the following python libraries installed:
+graph.py is a python module for creating node-edge graphs from scratch. The tool is highly configurable, allowing for the creation of many distinct node-edge graph phenotypes. The tool requires you have the following python libraries installed:
 
 **networkx** (https://networkx.org/)
 `pip install networkx`
@@ -141,7 +160,7 @@ g.write_gexf("graph.gexf")
 
 Additional node description parameters can be added to a graph using the _set_node_desc()_ function. This function takes three arguments:
 - name - a string used to name the column
-- vtype - a string representing the data type of values assigned (e.g. integer, float, etc.)
+- vtype - a string representing the data type of values assigned (e.g. integer, float, string, etc.)
 - values - a dict containing nodeid, value for all nodes in the graph
 
 Here's an example that shows how community modularity values can be set:
@@ -164,11 +183,11 @@ for n in g.nodeids:
 g.set_node_desc("random", "float", node_desc)
 ```
 
-A more detailed example using assigned node_desc values can be found in the later section that descibes how to use graph.py in simulations.
+A more detailed example using assigned node_desc values can be found in a later section that descibes how to use graph.py in simulations.
 
 node_desc values are automatically included in gexf files, and so will show up in Gephi's data laboratory tab.
 
-The point of the graph.py tool is to allow researchers to create node-edge graphs with interesting properties. You no longer need to use the "karate" graph for everything! The properties of graphs generated with this tool may be interesting to study. Generated graphs can also be used to create simulations (more on that later). 
+The point of the graph.py tool is to allow researchers to create node-edge graphs with interesting properties. You no longer need to use the "karate" graph for everything! The properties of graphs generated with this tool can be studied on their own, and may be interesting when applied in simulations.
 
 The Graph() initialization routine allows for the following parameters:
 
@@ -192,7 +211,7 @@ The Graph() initialization routine allows for the following parameters:
 
 **connect_random** (default: 0.4) after random nodes are added to the graph, some additional edges are created between existing nodes. Some connections are intentionally formed between a randomly selected pair of nodes. The number of connections made this way is determined by multiplying **num_nodes** with **connect_random**.
 
-The above description of graph.py's initialization options probably doesn't make sense. However, I will illustrate how the parameters work with a few examples.
+The above description of graph.py's initialization options probably doesn't make sense. However, how these parameters work will be illustrated in the following examples.
 
 ## Example 1: default settings
 
@@ -335,20 +354,6 @@ All the above graph examples can be generated in the _graph_examples.ipynb_ note
 A jupyter notebook for playing around with and testing different configuration options is available in this repo (graph_testing.ipynb). In order to run the notebook, you'll need to install bokeh (https://docs.bokeh.org/en/latest/#)
 
 `pip install bokeh`
-
-# Using graph.py and graphviz.py together
-
-Graph.py and graphviz.py can be easily used together in the following manner. Download this repository and copy graph.py and graphviz.py to the folder where you're writing your code. Import both files at the beginning of your script. Here's an example:
-```
-from graph import *
-from graphviz import *
-
-g = Graph() # Set options for graph generation
-gv = GraphViz(from_dict=g.interactions) # Add additional visualization options
-im = gv.make_graphviz()
-im.save("graphviz.png")
-display(im) # If running in a jupyter notebook
-```
 
 # politics_simulation.py - using graph.py to create simulations
 
