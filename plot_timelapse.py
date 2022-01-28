@@ -1,72 +1,49 @@
-from gather_analysis_helper import *
+import json, os
+from collections import Counter
 from graphviz import *
 import moviepy.video.io.ImageSequenceClip
 
-def load_slice(start_index, length, filename):
-    ret = []
-    end_index = start_index + length
-    index = 0
-    with io.open(filename, "r", encoding="utf-8") as f:
-        for line in f:
-            index += 1
-            if index >= start_index and index < end_index:
-                d = json.loads(line)
-                ret.append(d)
-            if index > end_index:
-                break
-    return ret
+fn = "captured_data.json"
+raw = []
+with open(fn, "r") as f:
+    for line in f:
+        entry = json.loads(line.strip())
+        raw.append(entry)
 
-def make_position(sn, sn_details):
-    xpos = 0
-    ypos = 0
-    if sn_details is not None:
-        if sn in sn_details:
-            dets = sn_details[sn]
-            id_str = dets['id_str']
-            xpos = int(id_str[:4])
-            ypos = int(id_str[-4:])
-    return (xpos, ypos)
+pid_poster = {}
+for entry in raw:
+    if entry["shared_pid"] == None:
+        pid_poster[entry["pid"]] = entry["poster"]
 
-def get_stats(current_ind, slice_len, filename, view):
-    raw = load_slice(current_ind, slice_len, filename)
-    full = get_counters_and_interactions2(raw)
-    inter = full[view]
-    sn_details = full['sn_details']
-    pos = {}
-    for source, targets in inter.items():
-        pos[source] = make_position(source, sn_details)
-        for target, count in targets.items():
-            pos[target] = make_position(target, sn_details)
-    return inter, pos
-
-target = "UK_trolls_2021"
-filename = "../twitter_analysis/" + target + "/data/raw.json"
-savedir = "figs_" + target
-if not os.path.exists(savedir):
-    os.makedirs(savedir)
-
-view = "sn_rep"
-num_steps = 5
-
-slice_len = 10000
-ind_inc = 100
-num_slices = 360
-
+slice_len = 5000
+ind_inc = 10
+num_slices = 10
 current_ind = 0
-
 glist = []
-
 for n in range(num_slices):
-    inter, pos = get_stats(current_ind, slice_len, filename, view)
+    inter = {}
+    for entry in raw[current_ind:current_ind+slice_len]:
+        if entry["shared_pid"] is not None:
+            poster = entry["poster"]
+            shared = entry["shared_pid"]
+            if poster not in inter:
+                inter[poster] = Counter()
+            inter[poster][pid_poster[shared]] += 1
+
     current_ind += ind_inc
     print("Getting slice " + str(n) + " / " + str(num_slices))
-    gv = GraphViz(inter, initial_pos=pos, size_by="in_degree",
+    gv = GraphViz(inter,
+                  size_by="in_degree",
                   font_scaling="root2.5")
     glist.append(gv)
 
+savedir = "frames"
+if not os.path.exists(savedir):
+    os.makedirs(savedir)
+num_steps = 5
 gv0 = glist[0]
 gv0.interpolate_multiple(glist, savedir, num_steps=num_steps)
 
 image_files = [savedir + "/frame" + "%05d"%x + ".png" for x in range(num_steps*num_slices)]
 clip = moviepy.video.io.ImageSequenceClip.ImageSequenceClip(image_files, fps=20)
-clip.write_videofile("timelapse_" + target + ".mp4")
+clip.write_videofile("timelapse.mp4")
