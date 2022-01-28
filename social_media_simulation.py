@@ -86,6 +86,7 @@ def new_post(post_id, nodeid, ts):
     entry["ts"] = step
     entry["shared_pid"] = None
     entry["shared_by"] = []
+    entry["last_seen"] = ts
     return entry
 
 def share_post(post_id, nodeid, ts, shared_pid):
@@ -95,17 +96,27 @@ def share_post(post_id, nodeid, ts, shared_pid):
     entry["ts"] = step
     entry["shared_pid"] = shared_pid
     entry["shared_by"] = []
+    entry["last_seen"] = ts
     return entry
 
-f = open("captured_data.json", "a")
+savefile = "generated_data.json"
+if os.path.exists(savefile):
+    os.remove(savefile)
+f = open(savefile, "a")
 
 post_verbosity = 0.00017
 share_verbosity = 0.00019
 post_id = 0
 expire_after = 5000
+delete_after = 50000
 recently_published = {}
+last_seen = {}
 step = 0
 while post_id < 100000:
+    if step % 10000 == 0:
+        post_verbosity = 0.00017 + random.uniform(-0.00002, 0.00003)
+        share_verbosity = 0.00019 + random.uniform(-0.00002, 0.00003)
+        print("**VERBOSITY CHANGED**", post_verbosity, share_verbosity)
     if random.random() < post_verbosity:
         nodeid = random.choice(originality_categorical)
         e = new_post(post_id, nodeid, step)
@@ -114,8 +125,12 @@ while post_id < 100000:
         f.write(json.dumps(e)+"\n")
         post_id += 1
     to_add = []
+    expired = []
     shared = {}
     for pid, entry in recently_published.items():
+        ls = entry["last_seen"]
+        if (step - ls) > delete_after:
+            expired.append(pid)
         ts = entry["ts"]
         if (step - ts) < expire_after:
             if random.random() < share_verbosity:
@@ -153,15 +168,13 @@ while post_id < 100000:
                 continue
             recently_published[x]["shared_by"].extend(c)
             recently_published[x]["shared_by"] = list(set(recently_published[x]["shared_by"]))
-            #print("Shared post update", recently_published[x])
+            recently_published[x]["last_seen"] = step
+    if len(expired) > 0:
+        print("Expiring pids: ", expired)
+        temp = {}
+        for pid, entry in recently_published.items():
+            if pid not in expired:
+                temp[pid] = entry
+        recently_published = dict(temp)
     step += 1
 
-
-
-# At each step, there's a chance that an influencer will publish a post
-# Posts can just be a random string of numbers
-# After a post is published, there's a chance that adjacent nodes will share it
-# shared posts can then be seen by neighbours of nodes who shared them
-# there's then a chance that they'll share the post
-# Give each post an ID, text, who published it
-# Basically create a json similar to a Twitter object
