@@ -375,6 +375,16 @@ Running the simulation for a few thousand steps generates a plot like the follow
 
 The above demonstrates that, while scandals alter short-term voting intention, it eventually returns to its original equilibrium when no scandals are happening. Thus it is best to "strike while the iron is hot" and call an election if your party is polling favourably.
 
+A second example simulation, _social_media_simulation.py_ is included in this repository. It can be used to create simulated social media traffic. It works in the following manner:
+1. Create a graph using graph.py
+2. Determine a set of nodes with highest in-degree in each of the graph's communities as "influencers".
+3. Assign all nodes with an "originality" value that determines how likely they are to create an original post. Influencer nodes are assigned higher originality values than others.
+4. Assign a verbosity value to each node that determines how likely it is to share a post.
+5. Run a number of steps where posts are randomly created, and randomly shared by neighbours.
+6. Each time a post is created or shared, append a json-formatted entry to a file.
+7. End when the desired number of posts have been written to disk.
+
+Other implementation details can be obtained by reading the code. This script is used to create data used for timelapse videos in the next section of this report.
 
 # plot_timelapse.py - using graphviz interpolation to create timelapse animations
 
@@ -382,9 +392,9 @@ Real-world social network data is temporal in nature. Static graph visualization
 
 It works in the following manner:
 
-1. Read from a file containing raw json tweet objects (one per line) that were captured from streaming Twitter data.
-2. Obtain a slice starting at position p and ending at position p+n.
-3. Process the raw data, extracting interactions between accounts (e.g. accounts that retweeted other accounts, accounts that replied to other accounts, etc.)
+1. Read raw data from a file containing raw json objects (one per line) that were generated with social_media_simulation.py.
+2. Obtain a slice of data starting at position p and ending at position p+n.
+3. Process the raw data, extracting interactions between accounts (i.e. accounts that shared posts created by other accounts)
 4. Create an interactions dict using the selected data representation.
 5. Create a graphviz object using the interactions dict. Append it to a list of Graph() objects.
 6. Repeat all steps for the next slice, and so on, until all required slices have been collected.
