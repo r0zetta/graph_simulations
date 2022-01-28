@@ -27,9 +27,24 @@ for n in range(num_slices):
 
     current_ind += ind_inc
     print("Getting slice " + str(n) + " / " + str(num_slices))
-    gv = GraphViz(inter,
+    gv = GraphViz(from_dict=inter,
+                  mag_factor=1.0,
+                  scaling=40,
+                  gravity=5,
+                  min_font_size=1,
+                  max_font_size=55,
+                  min_node_size=5,
+                  max_node_size=20,
+                  min_edge_size=1,
+                  max_edge_size=1,
                   size_by="in_degree",
-                  font_scaling="root2.5")
+                  #font_scaling="pow2.0",
+                  font_scaling="root2.5",
+                  auto_zoom=False,
+                  expand=0.3)
+    #im = gv.make_graphviz()
+    #im.save("test.png")
+    #sys.exit(0)
     glist.append(gv)
 
 savedir = "frames"
