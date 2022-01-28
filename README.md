@@ -392,7 +392,7 @@ Real-world social network data is temporal in nature. Static graph visualization
 
 It works in the following manner:
 
-1. Read raw data from a file containing raw json objects (one per line) that were generated with social_media_simulation.py.
+1. Read raw data from a file containing raw json objects (one per line) that were generated with social_media_simulation.py. I have included a _generated_data.json_ file in this repo in case you'd like to try running _plot_timelapse.py_ without running _social_media_simulation.py_ first.
 2. Obtain a slice of data starting at position p and ending at position p+n.
 3. Process the raw data, extracting interactions between accounts (i.e. accounts that shared posts created by other accounts)
 4. Create an interactions dict using the selected data representation.
