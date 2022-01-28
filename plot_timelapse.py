@@ -3,17 +3,12 @@ from collections import Counter
 from graphviz import *
 import moviepy.video.io.ImageSequenceClip
 
-fn = "social_data.json"
+fn = "generated_data.json"
 raw = []
 with open(fn, "r") as f:
     for line in f:
         entry = json.loads(line.strip())
         raw.append(entry)
-
-pid_poster = {}
-for entry in raw:
-    if entry["shared_pid"] == None:
-        pid_poster[entry["pid"]] = entry["poster"]
 
 slice_len = 10000
 ind_inc = 50
@@ -25,10 +20,10 @@ for n in range(num_slices):
     for entry in raw[current_ind:current_ind+slice_len]:
         if entry["shared_pid"] is not None:
             poster = entry["poster"]
-            shared = entry["shared_pid"]
+            original_poster = entry["original_poster"]
             if poster not in inter:
                 inter[poster] = Counter()
-            inter[poster][pid_poster[shared]] += 1
+            inter[poster][original_poster] += 1
 
     current_ind += ind_inc
     print("Getting slice " + str(n) + " / " + str(num_slices))

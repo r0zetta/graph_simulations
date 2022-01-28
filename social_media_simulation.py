@@ -83,21 +83,30 @@ def new_post(post_id, nodeid, ts):
     entry = {}
     entry["pid"] = post_id
     entry["poster"] = nodeid
+    entry["original_poster"] = nodeid
     entry["ts"] = step
     entry["shared_pid"] = None
     entry["shared_by"] = []
     entry["last_seen"] = ts
     return entry
 
-def share_post(post_id, nodeid, ts, shared_pid):
+def share_post(post_id, nodeid, ts, shared_pid, original_poster):
     entry = {}
     entry["pid"] = post_id
     entry["poster"] = nodeid
+    entry["original_poster"] = original_poster
     entry["ts"] = step
     entry["shared_pid"] = shared_pid
     entry["shared_by"] = []
     entry["last_seen"] = ts
     return entry
+
+def write_entry(entry, fh):
+    new_entry = {}
+    fields = ["pid", "poster", "original_poster", "shared_pid"]
+    for f in fields:
+        new_entry[f] = entry[f]
+    fh.write(json.dumps(new_entry) + "\n")
 
 savefile = "generated_data.json"
 if os.path.exists(savefile):
@@ -110,6 +119,7 @@ post_id = 0
 expire_after = 5000
 delete_after = 50000
 recently_published = {}
+pid_poster = {}
 last_seen = {}
 step = 0
 while post_id < 100000:
@@ -120,9 +130,10 @@ while post_id < 100000:
     if random.random() < post_verbosity:
         nodeid = random.choice(originality_categorical)
         e = new_post(post_id, nodeid, step)
+        pid_poster[post_id] = nodeid
         recently_published[post_id] = e
         print("Original", e)
-        f.write(json.dumps(e)+"\n")
+        write_entry(e, f)
         post_id += 1
     to_add = []
     expired = []
@@ -150,13 +161,14 @@ while post_id < 100000:
                     p = entry["pid"]
                     if entry["shared_pid"] is not None:
                         p = entry["shared_pid"]
-                    e = share_post(post_id, sharer, step, p)
+                    original_poster = pid_poster[p]
+                    e = share_post(post_id, sharer, step, p, original_poster)
                     if p not in shared:
                         shared[p] = []
                     shared[p].append(sharer)
                     to_add.append(e)
                     print("Share", poster, e)
-                    f.write(json.dumps(e)+"\n")
+                    write_entry(e, f)
                     post_id += 1
     if len(to_add) > 0:
         for entry in to_add:
