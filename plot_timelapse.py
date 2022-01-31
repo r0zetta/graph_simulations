@@ -1,4 +1,4 @@
-import json, os
+import json, os, random
 from collections import Counter
 from graphviz import *
 import moviepy.video.io.ImageSequenceClip
@@ -11,23 +11,40 @@ with open(fn, "r") as f:
         raw.append(entry)
 
 slice_len = 10000
-ind_inc = 50
-num_slices = 100
+ind_inc = 25
+num_slices = 360
 current_ind = 0
 glist = []
+pos = None
 for n in range(num_slices):
     inter = {}
+    nodeids = set()
     for entry in raw[current_ind:current_ind+slice_len]:
         if entry["shared_pid"] is not None:
             poster = entry["poster"]
             original_poster = entry["original_poster"]
+            nodeids.add(poster)
+            nodeids.add(original_poster)
             if poster not in inter:
                 inter[poster] = Counter()
             inter[poster][original_poster] += 1
 
+    # Set initial positions from previous visualization
+    if pos is not None:
+        new_pos = {}
+        for nodeid in nodeids:
+            if nodeid in pos:
+                new_pos[nodeid] = pos[nodeid]
+            else:
+                x, y = random.sample(range(1200), 2)
+                new_pos[nodeid] = [x, y]
+                #print("New node, pos:", x, y)
+        pos = dict(new_pos)
+
     current_ind += ind_inc
     print("Getting slice " + str(n) + " / " + str(num_slices))
     gv = GraphViz(from_dict=inter,
+                  initial_pos=pos,
                   mag_factor=1.0,
                   scaling=40,
                   gravity=5,
@@ -42,6 +59,7 @@ for n in range(num_slices):
                   font_scaling="root2.5",
                   auto_zoom=False,
                   expand=0.3)
+    pos = gv.positions
     #im = gv.make_graphviz()
     #im.save("test.png")
     #sys.exit(0)
@@ -50,7 +68,7 @@ for n in range(num_slices):
 savedir = "frames"
 if not os.path.exists(savedir):
     os.makedirs(savedir)
-num_steps = 10
+num_steps = 5
 gv0 = glist[0]
 gv0.interpolate_multiple(glist, savedir, num_steps=num_steps)
 
