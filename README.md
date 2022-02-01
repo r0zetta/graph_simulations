@@ -93,6 +93,8 @@ The GraphViz __init__() takes optional parameters that allow the user to adjust 
 
 **mag_factor** (default: 1.0) Defines the size of the image output. At a value of 1.0, the size of the image is 1200 x 1200. Setting this to 4.0 or higher will allow even the smallest labels on a resulting image to be examined.
 
+**graph_style** (default: "normal") Defines a style - either "normal" or "glowy" to display nodes and edges.
+
 **scaling** (default: 5.0) A variable to be passed into the forceatlas2 algorithm. See https://github.com/bhargavchippada/forceatlas2 for details.
 
 **gravity** (default: 20.0) A variable to be passed into the forceatlas2 algorithm. See https://github.com/bhargavchippada/forceatlas2 for details.
