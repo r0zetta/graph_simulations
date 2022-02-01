@@ -13,11 +13,11 @@ class GraphViz:
                  mag_factor=1.0, scaling=5.0, gravity=20.0, iterations=100,
                  strong_gravity=False, dissuade_hubs=True, edge_weight_influence=1.0,
                  eadjust=0.5, expand=0.3, zoom=[[0.0,0.0],[1.0,1.0]], auto_zoom=True,
-                 alpha=1.0, label_font="Arial Bold",
+                 label_font="Arial Bold",
                  min_font_size=4, max_font_size=24, font_scaling="lin",
                  min_node_size=5, max_node_size=20, node_scaling="lin",
                  min_edge_size=1, max_edge_size=5, edge_scaling="lin",
-                 background_mode="black", edge_style="curved",
+                 background_mode="black", edge_style="curved", node_style="glowy",
                  palette="intense", color_by="modularity", size_by="out_degree",
                  labels="nodeid", label_type="short",
                  interpolation="lin"):
@@ -48,7 +48,6 @@ class GraphViz:
         self.iterations = iterations
         self.eadjust = eadjust
         self.expand_by = expand
-        self.alpha = int(255 * alpha)
         self.zoom = zoom
         self.auto_zoom = auto_zoom
         self.min_font_size = min_font_size
@@ -417,16 +416,23 @@ class GraphViz:
         self.draw.line((x1, y1, x2, y2), fill=c, width=w)
 
     def draw_edge(self, p1, p2, w, c):
-        c += (self.alpha,)
         if self.edge_style == "curved":
             self.draw_edge_curved(p1, p2, w, c)
         else:
             self.draw_edge_straight(p1, p2, w, c)
 
+    def draw_node_glowy(self, x, y, radius, color):
+        for n in range(10):
+            r = radius * ((11-n)/10)
+            c = tuple([min(255, int(x * (n+1)/5)) for x in color])
+            self.draw.ellipse((x-r, y-r, x+r, y+r), fill=c)
+
     def draw_node(self, x, y, s, c):
-        c += (self.alpha,)
         s = int(s * self.mag_factor)
-        self.draw.ellipse((x-s, y-s, x+s, y+s), fill=c, outline=self.node_outline)
+        if self.node_style == "glowy":
+            self.draw_node_glowy(x, y, s, c)
+        else:
+            self.draw.ellipse((x-s, y-s, x+s, y+s), fill=c, outline=self.node_outline)
 
     # XXX Modify this if self.label_type is not "short"
     def draw_label(self, x, y, label, s):
@@ -443,7 +449,6 @@ class GraphViz:
                             (self.canvas_width, self.canvas_height),
                             self.background_color)
         self.draw = ImageDraw.Draw(self.im)
-        # Perhaps this fixes the alpha problem?
         self.draw.rectangle([(0,0),(self.canvas_width,self.canvas_height)],
                             fill=self.background_color)
 
