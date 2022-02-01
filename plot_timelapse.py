@@ -11,8 +11,8 @@ with open(fn, "r") as f:
         raw.append(entry)
 
 slice_len = 10000
-ind_inc = 25
-num_slices = 360
+ind_inc = 100
+num_slices = 400
 current_ind = 0
 glist = []
 pos = None
@@ -29,7 +29,8 @@ for n in range(num_slices):
                 inter[poster] = Counter()
             inter[poster][original_poster] += 1
 
-    # Set initial positions from previous visualization
+    # Set initial node positions from previous visualization
+    # Assign random positions for new nodes
     if pos is not None:
         new_pos = {}
         for nodeid in nodeids:
@@ -46,14 +47,15 @@ for n in range(num_slices):
     gv = GraphViz(from_dict=inter,
                   initial_pos=pos,
                   mag_factor=1.0,
+                  graph_style="glowy",
                   scaling=40,
                   gravity=5,
                   min_font_size=1,
                   max_font_size=55,
-                  min_node_size=5,
+                  min_node_size=10,
                   max_node_size=20,
-                  min_edge_size=1,
-                  max_edge_size=1,
+                  min_edge_size=2,
+                  max_edge_size=5,
                   size_by="in_degree",
                   #font_scaling="pow2.0",
                   font_scaling="root2.5",
@@ -72,6 +74,6 @@ num_steps = 5
 gv0 = glist[0]
 gv0.interpolate_multiple(glist, savedir, num_steps=num_steps)
 
-image_files = [savedir + "/frame" + "%05d"%x + ".png" for x in range(num_steps*num_slices)]
+image_files = [savedir + "/frame" + "%05d"%x + ".png" for x in range(1800)]
 clip = moviepy.video.io.ImageSequenceClip.ImageSequenceClip(image_files, fps=20)
 clip.write_videofile("timelapse.mp4")

@@ -17,7 +17,7 @@ class GraphViz:
                  min_font_size=4, max_font_size=24, font_scaling="lin",
                  min_node_size=5, max_node_size=20, node_scaling="lin",
                  min_edge_size=1, max_edge_size=5, edge_scaling="lin",
-                 background_mode="black", edge_style="curved", graph_style="glowy",
+                 background_mode="black", edge_style="curved", graph_style="normal",
                  palette="intense", color_by="modularity", size_by="out_degree",
                  labels="nodeid", label_type="short",
                  interpolation="lin"):
@@ -416,7 +416,7 @@ class GraphViz:
                     adjust = (index+1)/(steps/2)
                 else:
                     adjust = (steps-index+1)*2/steps
-                adjust = max(0.4, adjust)
+                adjust = max(0.3, adjust)
                 c = tuple([min(255, int(x * adjust)) for x in color])
             else:
                 c = color
@@ -433,7 +433,7 @@ class GraphViz:
                 adjust = (n+1)/(steps/2)
             else:
                 adjust = (steps-n+1)*2/steps
-            adjust = max(0.4, adjust)
+            adjust = max(0.3, adjust)
             c = tuple([min(255, int(x * adjust)) for x in color])
             x1, y1 = p
             x2, y2 = new_p
@@ -637,6 +637,3 @@ class GraphViz:
 # Add ability to provide multi-line labels, and display them in a nice box
 # e.g. for tweet text
 
-# Add a more "glowy" visualization
-
-# Figure out a way of keeping modularity class across multiple graphs
