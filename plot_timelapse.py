@@ -1,7 +1,51 @@
 import json, os, random
 from collections import Counter
 from graphviz import *
+import networkx as nx
+import community as louvain
 import moviepy.video.io.ImageSequenceClip
+
+def get_point_in_cluster(nodeid, inter, positions):
+    mapping = []
+    for source, targets in inter.items():
+        for target, count in targets.items():
+            mapping.append((source, target, count))
+
+    G = nx.Graph()
+    G.add_weighted_edges_from(mapping)
+    clusters = louvain.best_partition(G)
+    communities = {}
+    for name, mod in clusters.items():
+        if mod not in communities:
+            communities[mod] = []
+        communities[mod].append(name)
+
+    xval, yval = random.sample(range(50, 1500), 2)
+    if nodeid not in clusters:
+        return xval, yval
+
+    mod = clusters[nodeid]
+    members = communities[mod]
+    if len(members) < 1:
+        return xval, yval
+
+    xpos = []
+    ypos = []
+    for member in members:
+        if member in positions:
+            x, y = positions[member]
+            xpos.append(x)
+            ypos.append(y)
+    if len(xpos) < 1 or len(ypos) < 1:
+        return xval, yval
+    xmin = min(xpos)
+    xmax = max(xpos)
+    ymin = min(ypos)
+    ymax = max(ypos)
+    xval = (xmax-xmin) / 2
+    yval = (ymax-ymin) / 2
+    return xval, yval
+
 
 fn = "generated_data.json"
 raw = []
@@ -30,16 +74,15 @@ for n in range(num_slices):
             inter[poster][original_poster] += 1
 
     # Set initial node positions from previous visualization
-    # Assign random positions for new nodes
+    # Assign positions for new nodes based on modularity
     if pos is not None:
         new_pos = {}
         for nodeid in nodeids:
             if nodeid in pos:
                 new_pos[nodeid] = pos[nodeid]
             else:
-                x, y = random.sample(range(1200), 2)
+                x, y = get_point_in_cluster(nodeid, inter, pos)
                 new_pos[nodeid] = [x, y]
-                #print("New node, pos:", x, y)
         pos = dict(new_pos)
 
     current_ind += ind_inc
@@ -74,6 +117,7 @@ num_steps = 5
 gv0 = glist[0]
 gv0.interpolate_multiple(glist, savedir, num_steps=num_steps)
 
-image_files = [savedir + "/frame" + "%05d"%x + ".png" for x in range(1800)]
+num_frames = min(1800, num_slices*num_steps)
+image_files = [savedir + "/frame" + "%05d"%x + ".png" for x in range(num_frames)]
 clip = moviepy.video.io.ImageSequenceClip.ImageSequenceClip(image_files, fps=20)
 clip.write_videofile("timelapse.mp4")
