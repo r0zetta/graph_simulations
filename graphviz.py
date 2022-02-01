@@ -17,7 +17,7 @@ class GraphViz:
                  min_font_size=4, max_font_size=24, font_scaling="lin",
                  min_node_size=5, max_node_size=20, node_scaling="lin",
                  min_edge_size=1, max_edge_size=5, edge_scaling="lin",
-                 background_mode="black", edge_style="curved", node_style="glowy",
+                 background_mode="black", edge_style="curved", graph_style="glowy",
                  palette="intense", color_by="modularity", size_by="out_degree",
                  labels="nodeid", label_type="short",
                  interpolation="lin"):
@@ -61,6 +61,7 @@ class GraphViz:
         self.max_edge_size = max_edge_size
         self.edge_scaling = edge_scaling # lin, pow, root, fixed
         self.edge_style = edge_style # curved, straight
+        self.graph_style = graph_style # curved, straight
         self.background_mode = background_mode # white, black
         if self.background_mode == "black":
             self.background_color = (0,0,0)
@@ -400,20 +401,52 @@ class GraphViz:
                 return x
             cv += step_size
 
-    def draw_edge_curved(self, p1, p2, w, c):
+    def draw_edge_curved(self, p1, p2, w, color):
         control_points = self.get_control_points(p1, p2)
         points = self.make_bezier(control_points, 100)
-        for index in range(len(points)-1):
+        steps = len(points)
+        for index in range(steps-1):
             x1 = points[index][0]
             y1 = points[index][1]
             x2 = points[index+1][0]
             y2 = points[index+1][1]
+            if self.graph_style == "glowy":
+                adjust = 1.0
+                if index <=(steps/2):
+                    adjust = (index+1)/(steps/2)
+                else:
+                    adjust = (steps-index+1)*2/steps
+                adjust = max(0.4, adjust)
+                c = tuple([min(255, int(x * adjust)) for x in color])
+            else:
+                c = color
             self.draw.line((x1, y1, x2, y2), fill=c, width=w)
 
+    def draw_glowy_line(self, p1, p2, width, color, steps):
+        sd = distance(p1, p2) * (1/steps)
+        ang = angle(p1, p2)
+        p = p1
+        for n in range(steps):
+            new_p = move_point(p, sd, ang)
+            adjust = 1.0
+            if n <=(steps/2):
+                adjust = (n+1)/(steps/2)
+            else:
+                adjust = (steps-n+1)*2/steps
+            adjust = max(0.4, adjust)
+            c = tuple([min(255, int(x * adjust)) for x in color])
+            x1, y1 = p
+            x2, y2 = new_p
+            draw.line((x1, y1, x2, y2), fill=c, width=width)
+            p = new_p
+
     def draw_edge_straight(self, p1, p2, w, c):
-        x1, y1 = p1
-        x2, y2 = p2
-        self.draw.line((x1, y1, x2, y2), fill=c, width=w)
+        if self.graph_style == "glowy":
+            self.draw_glowy_line(p1, p2, w, c, 20)
+        else:
+            x1, y1 = p1
+            x2, y2 = p2
+            self.draw.line((x1, y1, x2, y2), fill=c, width=w)
 
     def draw_edge(self, p1, p2, w, c):
         if self.edge_style == "curved":
@@ -429,7 +462,7 @@ class GraphViz:
 
     def draw_node(self, x, y, s, c):
         s = int(s * self.mag_factor)
-        if self.node_style == "glowy":
+        if self.graph_style == "glowy":
             self.draw_node_glowy(x, y, s, c)
         else:
             self.draw.ellipse((x-s, y-s, x+s, y+s), fill=c, outline=self.node_outline)
