@@ -36,6 +36,9 @@ An graph visualiztion generated with graphviz.py looks like this:
 Here is an example of a visualization generated from captured Twitter data using **background_mode** = "white"
 ![white_mode](media/white_mode.png)
 
+There's also a "glowy" mode available:
+![glowy_mode](media/glowy_mode.png)
+
 As illustrated in the above examples, graphviz.py is able to approximate Gephi's visualization style fairly accurately.
 
 In order to use _graphviz.py_ you'll need to install the following:
