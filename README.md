@@ -10,7 +10,7 @@ This repository contains tools for creating, manipulating, and visualizing node-
 - If you want to learn how to create simulations using graphs created via *graph.py*, go to the [politics_simulation.py](https://github.com/r0zetta/graph_simulations/blob/main/README.md#politics_simulationpy---using-graphpy-to-create-simulations) section
 - If you want to learn how to create graphviz animations (such as the one below), go to the [plot_timelapse.py](https://github.com/r0zetta/graph_simulations/blob/main/README.md#plot_timelapsepy---using-graphviz-interpolation-to-create-timelapse-animations)section
 
-![animated_timelapse](media/animated_timelapse.gif)
+![synthesized_timelapse](media/synthesized_timelapse.gif)
 
 ## Using graph.py and graphviz.py together
 
