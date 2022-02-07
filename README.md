@@ -412,7 +412,7 @@ How does _interpolate_multiple()_ work?
 2. Modularity values are mapped back to the values represented in the first input layout, to preserve color schemes.
 3. To attempt to make layouts somewhat deterministic, initial positions are derived from users' Twitter id_str first and last 4 digits.
 
-The following animation depicts a synthesized timelapse created using data created with _social_media_simulation.py_.
+The following animation depicts a synthesized timelapse using data created with _social_media_simulation.py_.
 
 ![synthesized_timelapse](media/synthesized_timelapse.gif)
 
