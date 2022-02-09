@@ -19,8 +19,7 @@ class GraphViz:
                  min_edge_size=1, max_edge_size=5, edge_scaling="lin",
                  background_mode="black", edge_style="curved", graph_style="normal",
                  palette="intense", color_by="modularity", size_by="out_degree",
-                 labels="nodeid", label_type="short",
-                 interpolation="lin"):
+                 labels="nodeid", max_label_len=50, interpolation="lin"):
         self.inter = None
         if from_dict is not None:
             self.inter = from_dict
@@ -73,7 +72,7 @@ class GraphViz:
             self.font_color = (0,0,0)
         self.palette = palette
         self.labels = labels
-        self.label_type = label_type
+        self.max_label_len = max_label_len
         self.color_by = color_by
         self.size_by = size_by
         self.interpolation = interpolation # lin, dec, acc
@@ -221,7 +220,7 @@ class GraphViz:
         self.positions = new_coords
         self.canvas_width += int(self.canvas_width * (self.expand_by*2))
         self.canvas_height += int(self.canvas_height * (self.expand_by*2))
-        self.mag_factor += int(self.mag_factor * self.expand_by)
+        #self.mag_factor += int(self.mag_factor * self.expand_by)
         mid_x = int(self.canvas_width/2)
         mid_y = int(self.canvas_height/2)
         mid_p = (mid_x, mid_y)
@@ -467,7 +466,6 @@ class GraphViz:
         else:
             self.draw.ellipse((x-s, y-s, x+s, y+s), fill=c, outline=self.node_outline)
 
-    # XXX Modify this if self.label_type is not "short"
     def draw_label(self, x, y, label, s):
         label = str(label)
         s = int(s * self.mag_factor)
@@ -476,6 +474,35 @@ class GraphViz:
         xoff = x - (llen * 0.25 * s)
         yoff = y - (s * 0.25)
         self.draw.text((xoff, yoff), label, fill=self.font_color, font=font)
+
+    def draw_multiline_label(self, x, y, text, s):
+        tl = len(text)
+        ml = 30
+        words = text.split()
+        lines = []
+        line = ""
+        for word in words:
+            line += word + " "
+            if len(line) > ml:
+                lines.append(line.strip())
+                line = ""
+        if len(line.strip()) > 0:
+            lines.append(line.strip())
+        nl = len(lines)
+        llen = max([len(x) for x in lines])
+        font = ImageFont.truetype(self.label_font + ".ttf", s)
+        lh = x - (llen * 0.25 * s) - (s * 0.5)
+        rh = x + (llen * 0.25 * s) - (s)
+        up = y - (s * 0.5)
+        dn = y - (s * 0.25) + (s * len(lines)) + (s * 0.25)
+        self.draw.rectangle([lh, up, rh, dn],
+                             fill=self.background_color,
+                             outline=self.font_color,
+                             width=1)
+        xoff = x - (llen * 0.25 * s)
+        for index, line in enumerate(lines):
+            yoff = (y - (s * 0.25)) + (s*index)
+            self.draw.text((xoff, yoff), line, fill=self.font_color, font=font)
 
     def draw_image(self):
         self.im = Image.new('RGBA',
@@ -526,9 +553,16 @@ class GraphViz:
             s = self.extra_vars[self.size_by][sn]
             if s < 1:
                 s = 1
-            # XXX Modify this if self.labels is not "nodeid"
-            font_size = self.set_font_size(s)
-            self.draw_label(xpos, ypos, sn, font_size)
+            text = sn
+            if self.labels != "nodeid":
+                if sn in self.extra_vars[self.labels]:
+                    text = self.extra_vars[self.labels][sn]
+            if len(text) > 0:
+                font_size = self.set_font_size(s)
+                if len(text) <= self.max_label_len:
+                    self.draw_label(xpos, ypos, text, font_size)
+                else:
+                    self.draw_multiline_label(xpos, ypos, text, font_size)
 
         return self.im
 
@@ -634,6 +668,6 @@ class GraphViz:
         self.draw_image()
         return self.im
 
-# Add ability to provide multi-line labels, and display them in a nice box
-# e.g. for tweet text
+
+
 
