@@ -70,7 +70,13 @@ Where _s_ is source, _t_ is target and _w_ is weight. Both sources and targets c
 ```
 [[s, t, w], [s, t, w], ..., [s, t, w]]
 ```
-Where _s_ is source, _t_ is target and _w_ is weight.
+Where _s_ is source, _t_ is target and _w_ is weight. 
+
+Note that this mode can be used to add edge labels. Just prepare the data in the following format:
+```
+[[s, t, w, l], [s, t, w, l], ..., [s, t, w, l]]
+```
+Where _s_ is source, _t_ is target, _w_ is weight, and _l_ is the label. Edge labels are stored in the GraphViz object as extra_vars['edge_labels'].
 
 3. Initialize a GraphViz object using from_nx=nx. This takes a networkx object as input.
 
