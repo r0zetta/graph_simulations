@@ -20,6 +20,9 @@ class GraphViz:
                  background_mode="black", edge_style="curved", graph_style="normal",
                  palette="intense", color_by="modularity", size_by="out_degree",
                  labels="nodeid", max_label_len=50, interpolation="lin"):
+        self.extra_vars = extra_vars
+        if self.extra_vars is None:
+            self.extra_vars = {}
         self.inter = None
         if from_dict is not None:
             self.inter = from_dict
@@ -35,9 +38,6 @@ class GraphViz:
             print("from_nx=nx")
             sys.exit(0)
         self.initial_pos = initial_pos
-        self.extra_vars = extra_vars
-        if self.extra_vars is None:
-            self.extra_vars = {}
         self.mag_factor = mag_factor
         self.scaling = scaling
         self.gravity = gravity
@@ -111,11 +111,18 @@ class GraphViz:
 
     def inter_from_mapping(self, mapping):
         inter = {}
+        edge_labels = {}
         for item in mapping:
-            source, target, weight = item
+            if len(item) == 3:
+                source, target, weight = item
+            elif len(item) == 4:
+                source, target, weight, label = item
+                edge_labels[str(source)+":"+str(target)] = label
             if source not in inter:
                 inter[source] = Counter()
             inter[source][target] += weight
+        if len(edge_labels) > 0:
+            self.extra_vars["edge_labels"] = edge_labels
         return inter
 
     def inter_from_nx(self, nx):
@@ -141,6 +148,26 @@ class GraphViz:
         new_x = p[0] + distance * math.cos(angle)
         new_y = p[1] + distance * math.sin(angle)
         return (new_x, new_y)
+
+    def get_midpoint(self, p1, p2):
+        if self.edge_style == "curved":
+            return self.get_midpoint_bezier(p1, p2)
+        else:
+            return self.get_midpoint_straight(p1, p2)
+
+    def get_midpoint_straight(self, p1, p2):
+        angle = self.angle(p1, p2)
+        distance = self.distance(p1, p2) * 0.5
+        start_point = p1
+        new_point = self.move_point(start_point, distance, angle)
+        return new_point
+
+    def get_midpoint_bezier(self, p1, p2):
+        control_points = self.get_control_points(p1, p2)
+        points = self.make_bezier(control_points, 100)
+        steps = len(points)
+        mstep = int(steps/2)
+        return points[mstep]
 
     def get_control_points(self, p1, p2):
         num_points = 2
@@ -466,16 +493,24 @@ class GraphViz:
         else:
             self.draw.ellipse((x-s, y-s, x+s, y+s), fill=c, outline=self.node_outline)
 
-    def draw_label(self, x, y, label, s):
+    def draw_label(self, x, y, label, s, color=None, fnt=None):
+        fill = self.font_color
+        if color is not None:
+            fill = color
         label = str(label)
         s = int(s * self.mag_factor)
         font = ImageFont.truetype(self.label_font + ".ttf", s)
+        if fnt is not None:
+            font = ImageFont.truetype(fnt + ".ttf", s)
         llen = len(label)
         xoff = x - (llen * 0.25 * s)
         yoff = y - (s * 0.25)
-        self.draw.text((xoff, yoff), label, fill=self.font_color, font=font)
+        self.draw.text((xoff, yoff), label, fill=fill, font=font)
 
-    def draw_multiline_label(self, x, y, text, s):
+    def draw_multiline_label(self, x, y, text, s, color=None, fnt=None):
+        fill = self.font_color
+        if color is not None:
+            fill = color
         tl = len(text)
         ml = 30
         words = text.split()
@@ -491,13 +526,15 @@ class GraphViz:
         nl = len(lines)
         llen = max([len(x) for x in lines])
         font = ImageFont.truetype(self.label_font + ".ttf", s)
+        if fnt is not None:
+            font = ImageFont.truetype(fnt + ".ttf", s)
         lh = x - (llen * 0.25 * s) - (s * 0.5)
         rh = x + (llen * 0.25 * s) - (s)
         up = y - (s * 0.5)
         dn = y - (s * 0.25) + (s * len(lines)) + (s * 0.25)
         self.draw.rectangle([lh, up, rh, dn],
-                             fill=self.background_color,
-                             outline=self.font_color,
+                             fill=fill,
+                             outline=fill,
                              width=1)
         xoff = x - (llen * 0.25 * s)
         for index, line in enumerate(lines):
@@ -547,7 +584,7 @@ class GraphViz:
             node_size = self.set_node_size(s)
             self.draw_node(xpos, ypos, node_size, color)
 
-        # Draw labels
+        # Draw node labels
         for sn, coords in self.positions.items():
             xpos, ypos = coords
             s = self.extra_vars[self.size_by][sn]
@@ -563,6 +600,27 @@ class GraphViz:
                     self.draw_label(xpos, ypos, text, font_size)
                 else:
                     self.draw_multiline_label(xpos, ypos, text, font_size)
+
+        # Draw edge labels
+        if 'edge_labels' in self.extra_vars:
+            for source, targets in self.inter.items():
+                for target, weight in targets.items():
+                    l = str(source) + ":" + str(target)
+                    if l in self.extra_vars['edge_labels']:
+                        text = self.extra_vars['edge_labels'][l]
+                        if len(text) > 0:
+                            font_size = self.set_font_size(weight)
+                            sp = self.positions[source]
+                            tp = self.positions[target]
+                            #cp = self.get_control_points(sp, tp)
+                            #xpos, ypos = cp[1]
+                            xpos, ypos = self.get_midpoint(sp, tp)
+                            if len(text) <= self.max_label_len:
+                                self.draw_label(xpos, ypos, text, font_size,
+                                                color=(128,128,128), fnt="Arial")
+                            else:
+                                self.draw_multiline_label(xpos, ypos, text, font_size,
+                                                          color=(128,128,128), fnt="Arial")
 
         return self.im
 
