@@ -9,11 +9,11 @@ import math, sys
 
 class GraphViz:
     def __init__(self, from_dict=None, from_mapping=None, from_nx=None,
-                 initial_pos=None, extra_vars=None,
+                 initial_pos=None, extra_vars=None, info=None,
                  mag_factor=1.0, scaling=5.0, gravity=20.0, iterations=100,
                  strong_gravity=False, dissuade_hubs=True, edge_weight_influence=1.0,
-                 eadjust=0.5, expand=0.3, zoom=[[0.0,0.0],[1.0,1.0]], auto_zoom=True,
-                 label_font="Arial Bold",
+                 eadjust=0.5, expand=0.3, zoom=[[0.0,0.0],[1.0,1.0]], auto_zoom=False,
+                 modularity_legend="topright", label_font="Arial Bold", alt_font="Arial",
                  min_font_size=4, max_font_size=24, font_scaling="lin",
                  min_node_size=5, max_node_size=20, node_scaling="lin",
                  min_edge_size=1, max_edge_size=5, edge_scaling="lin",
@@ -23,6 +23,7 @@ class GraphViz:
         self.extra_vars = extra_vars
         if self.extra_vars is None:
             self.extra_vars = {}
+        self.info = info
         self.inter = None
         if from_dict is not None:
             self.inter = from_dict
@@ -49,10 +50,12 @@ class GraphViz:
         self.expand_by = expand
         self.zoom = zoom
         self.auto_zoom = auto_zoom
+        self.modularity_legend = modularity_legend
         self.min_font_size = min_font_size
         self.max_font_size = max_font_size
         self.font_scaling = font_scaling # lin, pow, root, fixed
         self.label_font = label_font
+        self.alt_font = alt_font
         self.min_node_size = min_node_size
         self.max_node_size = max_node_size
         self.node_scaling = node_scaling # lin, pow, root, fixed
@@ -362,10 +365,13 @@ class GraphViz:
         self.expand_graph()
 
         modularity_class = {}
+        communities = []
         for community_number, community in clusters.items():
+            communities.append(community_number)
             for name in community: 
                 modularity_class[name] = community_number
         self.extra_vars["modularity"] = modularity_class
+        self.extra_vars["communities"] = communities
 
     def set_from_graph(self, g):
         self.inter = g.inter
@@ -533,13 +539,49 @@ class GraphViz:
         up = y - (s * 0.5)
         dn = y - (s * 0.25) + (s * len(lines)) + (s * 0.25)
         self.draw.rectangle([lh, up, rh, dn],
-                             fill=fill,
+                             fill=self.background_color,
                              outline=fill,
                              width=1)
         xoff = x - (llen * 0.25 * s)
         for index, line in enumerate(lines):
             yoff = (y - (s * 0.25)) + (s*index)
             self.draw.text((xoff, yoff), line, fill=self.font_color, font=font)
+
+    def draw_modularity_legend(self):
+        position = self.modularity_legend
+        num_communities = min(15, len(self.extra_vars["communities"]))
+        box_height = 25 * num_communities
+        box_width = 75
+        up = 0
+        if "top" in position:
+            up = 20
+        else:
+            up = self.canvas_height - box_height - 20
+        dn = up + box_height + 5
+        lh = 0
+        if "left" in position:
+            lh = 20
+        else:
+            lh = self.canvas_width - box_width - 20
+        rh = lh + box_width
+        # Draw background box
+        self.draw.rectangle([lh, up-5, rh, dn+5],
+                             fill=self.background_color,
+                             outline=(128,128,128),
+                             width=1)
+        # Draw legend
+        for index in range(num_communities):
+            cnum = self.extra_vars["communities"][index]
+            ccolor = self.color_palette[cnum]
+            xpos = lh + 20
+            ypos = up + (25*(index+1)) - 10
+            self.draw_node(xpos, ypos, 10, ccolor)
+            xpos = lh + 50
+            ypos = ypos - 7
+            self.draw_label(xpos, ypos, str(cnum), 24, fnt=self.alt_font)
+
+    def draw_info_box(self, title, position, orient, val):
+        return
 
     def draw_image(self):
         self.im = Image.new('RGBA',
@@ -617,10 +659,14 @@ class GraphViz:
                             xpos, ypos = self.get_midpoint(sp, tp)
                             if len(text) <= self.max_label_len:
                                 self.draw_label(xpos, ypos, text, font_size,
-                                                color=(128,128,128), fnt="Arial")
+                                                color=(128,128,128), fnt=self.alt_font)
                             else:
                                 self.draw_multiline_label(xpos, ypos, text, font_size,
-                                                          color=(128,128,128), fnt="Arial")
+                                                          color=(128,128,128), fnt=self.alt_font)
+
+        # Draw info boxes
+        if self.modularity_legend is not None:
+            self.draw_modularity_legend()
 
         return self.im
 
@@ -726,6 +772,13 @@ class GraphViz:
         self.draw_image()
         return self.im
 
+
+
+# Add support for various info boxes
+# args are:
+# title, position, orientation, dict of values
+#
+# e.g. info_data = {title:"timestamp", position:"bottom_left", orient:"horizontal", val:"12080123"}
 
 
 
