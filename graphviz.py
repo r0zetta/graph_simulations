@@ -23,6 +23,7 @@ class GraphViz:
         self.extra_vars = extra_vars
         if self.extra_vars is None:
             self.extra_vars = {}
+        #info = [["timestamp", "bottomleft", "horizontal", "Timestamp: 120801090923"]]
         self.info = info
         self.inter = None
         if from_dict is not None:
@@ -557,12 +558,12 @@ class GraphViz:
             up = 20
         else:
             up = self.canvas_height - box_height - 20
-        dn = up + box_height + 5
         lh = 0
         if "left" in position:
             lh = 20
         else:
             lh = self.canvas_width - box_width - 20
+        dn = up + box_height + 5
         rh = lh + box_width
         # Draw background box
         self.draw.rectangle([lh, up-5, rh, dn+5],
@@ -581,7 +582,28 @@ class GraphViz:
             self.draw_label(xpos, ypos, str(cnum), 24, fnt=self.alt_font)
 
     def draw_info_box(self, title, position, orient, val):
-        return
+        box_height = 25
+        box_width = len(val) * 14
+        up = 0
+        if "top" in position:
+            up = 20
+        else:
+            up = self.canvas_height - box_height - 20
+        lh = 0
+        if "left" in position:
+            lh = 20
+        else:
+            lh = self.canvas_width - box_width - 20
+        dn = up + box_height + 4
+        rh = lh + box_width
+        # Draw background box
+        self.draw.rectangle([lh, up-4, rh+4, dn+4],
+                             fill=self.background_color,
+                             outline=(128,128,128),
+                             width=1)
+        xpos = lh + int(box_width/2) - 4
+        ypos = up + 7
+        self.draw_label(xpos, ypos, str(val), 24, fnt=self.alt_font)
 
     def draw_image(self):
         self.im = Image.new('RGBA',
@@ -667,6 +689,13 @@ class GraphViz:
         # Draw info boxes
         if self.modularity_legend is not None:
             self.draw_modularity_legend()
+
+        if self.info is not None:
+            print(self.info)
+            for item in self.info:
+                print(item)
+                title, position, orient, val = item
+                self.draw_info_box(title, position, orient, val)
 
         return self.im
 
