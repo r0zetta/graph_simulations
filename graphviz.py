@@ -13,7 +13,7 @@ class GraphViz:
                  mag_factor=1.0, scaling=5.0, gravity=20.0, iterations=100,
                  strong_gravity=False, dissuade_hubs=True, edge_weight_influence=1.0,
                  eadjust=0.5, expand=0.3, zoom=[[0.0,0.0],[1.0,1.0]], auto_zoom=False,
-                 modularity_legend="topright", label_font="Arial Bold", alt_font="Arial",
+                 modularity_legend=None, label_font="Arial Bold", alt_font="Arial",
                  min_font_size=4, max_font_size=24, font_scaling="lin",
                  min_node_size=5, max_node_size=20, node_scaling="lin",
                  min_edge_size=1, max_edge_size=5, edge_scaling="lin",
@@ -23,7 +23,6 @@ class GraphViz:
         self.extra_vars = extra_vars
         if self.extra_vars is None:
             self.extra_vars = {}
-        #info = [["timestamp", "bottomleft", "horizontal", "Timestamp: 120801090923"]]
         self.info = info
         self.inter = None
         if from_dict is not None:
@@ -581,9 +580,10 @@ class GraphViz:
             ypos = ypos - 7
             self.draw_label(xpos, ypos, str(cnum), 24, fnt=self.alt_font)
 
-    def draw_info_box(self, title, position, orient, val):
-        box_height = 25
-        box_width = len(val) * 14
+    def draw_info_box(self, val, position, size):
+        font_size = size
+        box_height = font_size
+        box_width = len(val) * (int(font_size/2) + 2)
         up = 0
         if "top" in position:
             up = 20
@@ -594,16 +594,17 @@ class GraphViz:
             lh = 20
         else:
             lh = self.canvas_width - box_width - 20
-        dn = up + box_height + 4
+        pad = int(font_size/6)
+        dn = up + box_height + pad
         rh = lh + box_width
         # Draw background box
-        self.draw.rectangle([lh, up-4, rh+4, dn+4],
+        self.draw.rectangle([lh, up-pad, rh+pad, dn+pad],
                              fill=self.background_color,
-                             outline=(128,128,128),
+                             outline=self.background_color,
                              width=1)
-        xpos = lh + int(box_width/2) - 4
-        ypos = up + 7
-        self.draw_label(xpos, ypos, str(val), 24, fnt=self.alt_font)
+        xpos = lh + int(box_width/2) - pad
+        ypos = up + (pad * 2)
+        self.draw_label(xpos, ypos, str(val), font_size, fnt=self.alt_font)
 
     def draw_image(self):
         self.im = Image.new('RGBA',
@@ -691,11 +692,9 @@ class GraphViz:
             self.draw_modularity_legend()
 
         if self.info is not None:
-            print(self.info)
             for item in self.info:
-                print(item)
-                title, position, orient, val = item
-                self.draw_info_box(title, position, orient, val)
+                val, position, size = item
+                self.draw_info_box(val, position, size)
 
         return self.im
 
@@ -803,11 +802,6 @@ class GraphViz:
 
 
 
-# Add support for various info boxes
-# args are:
-# title, position, orientation, dict of values
-#
-# e.g. info_data = {title:"timestamp", position:"bottom_left", orient:"horizontal", val:"12080123"}
-
+# Add support for info box pointing to node
 
 
