@@ -473,7 +473,7 @@ class GraphViz:
             p = new_p
 
     def draw_edge_straight(self, p1, p2, w, c):
-        if self.graph_style == "glowy":
+        if self.graph_style in ["glowy", "sphere"]:
             self.draw_glowy_line(p1, p2, w, c, 20)
         else:
             x1, y1 = p1
@@ -486,16 +486,25 @@ class GraphViz:
         else:
             self.draw_edge_straight(p1, p2, w, c)
 
+    def draw_node_sphere(self, x, y, radius, color):
+        for n in range(10):
+            r = radius * ((11-n)/10)
+            c = tuple([min(255, int(z * (n+1)/5)) for z in color])
+            self.draw.ellipse((x-r, y-r, x+r, y+r), fill=c)
+
     def draw_node_glowy(self, x, y, radius, color):
         for n in range(10):
             r = radius * ((11-n)/10)
-            c = tuple([min(255, int(x * (n+1)/5)) for x in color])
+            #c = tuple([min(255, int(z * ((6-n)/10))) for z in color])
+            c = tuple([min(255, int(z * (1/(n+1)))) for z in color])
             self.draw.ellipse((x-r, y-r, x+r, y+r), fill=c)
 
     def draw_node(self, x, y, s, c):
         s = int(s * self.mag_factor)
         if self.graph_style == "glowy":
             self.draw_node_glowy(x, y, s, c)
+        elif self.graph_style == "sphere":
+            self.draw_node_sphere(x, y, s, c)
         else:
             self.draw.ellipse((x-s, y-s, x+s, y+s), fill=c, outline=self.node_outline)
 
@@ -803,5 +812,8 @@ class GraphViz:
 
 
 # Add support for info box pointing to node
-
+# Add support for "bold" nodes
+# Add support for custom color pallette
+# Add support for additional edge attributes (e.g. color)
+# Add the other "glowy" node representation
 
