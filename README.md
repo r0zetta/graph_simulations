@@ -72,11 +72,17 @@ Where _s_ is source, _t_ is target and _w_ is weight. Both sources and targets c
 ```
 Where _s_ is source, _t_ is target and _w_ is weight. 
 
-Note that this mode can be used to add edge labels. Just prepare the data in the following format:
+This mode can be used to add edge labels. Just prepare the data in the following format:
 ```
 [[s, t, w, l], [s, t, w, l], ..., [s, t, w, l]]
 ```
 Where _s_ is source, _t_ is target, _w_ is weight, and _l_ is the label. Edge labels are stored in the GraphViz object as extra_vars['edge_labels'].
+
+This mode can also be used to add specific edge colors. Just prepare the data in the following format:
+```
+[[s, t, w, l, c], [s, t, w, l, c], ..., [s, t, w, l, c]]
+```
+Where _s_ is source, _t_ is target, _w_ is weight, _l_ is the label, and _c_ is the color. Edge colors are stored in the GraphViz object as extra_vars['edge_colors'].
 
 3. Initialize a GraphViz object using from_nx=nx. This takes a networkx object as input.
 
@@ -102,7 +108,9 @@ The GraphViz __init__() takes optional parameters that allow the user to adjust 
 
 **mag_factor** (default: 1.0) Defines the size of the image output. At a value of 1.0, the size of the image is 1200 x 1200. Setting this to 4.0 or higher will allow even the smallest labels on a resulting image to be examined.
 
-**graph_style** (default: "normal") Defines a style - either "normal" or "glowy" to display nodes and edges.
+**graph_style** (default: "normal") Defines a style - either "normal", "sphere", or "glowy" which alters the way nodes and edges are displayed.
+
+**layout** (default: "FA2") Defines the layout algorithm to use when positioning nodes for visualization. Options are "FA2", "spring", "kamada_kawai", and "spectral". 
 
 **scaling** (default: 5.0) A variable to be passed into the forceatlas2 algorithm. See https://github.com/bhargavchippada/forceatlas2 for details.
 
