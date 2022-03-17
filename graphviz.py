@@ -9,8 +9,8 @@ import math, sys
 
 class GraphViz:
     def __init__(self, from_dict=None, from_mapping=None, from_nx=None,
-                 initial_pos=None, extra_vars=None, info=None,
-                 mag_factor=1.0, scaling=5.0, gravity=20.0, iterations=100,
+                 initial_pos=None, extra_vars=None, info=None, custom_palette=None,
+                 layout="FA2", mag_factor=1.0, scaling=5.0, gravity=20.0, iterations=100,
                  strong_gravity=False, dissuade_hubs=True, edge_weight_influence=1.0,
                  eadjust=0.5, expand=0.3, zoom=[[0.0,0.0],[1.0,1.0]], auto_zoom=False,
                  modularity_legend=None, label_font="Arial Bold", alt_font="Arial",
@@ -38,6 +38,7 @@ class GraphViz:
             print("or")
             print("from_nx=nx")
             sys.exit(0)
+        self.layout = layout
         self.initial_pos = initial_pos
         self.mag_factor = mag_factor
         self.scaling = scaling
@@ -73,7 +74,6 @@ class GraphViz:
             self.background_color = (255,255,255)
             self.node_outline = (0,0,0)
             self.font_color = (0,0,0)
-        self.palette = palette
         self.labels = labels
         self.max_label_len = max_label_len
         self.color_by = color_by
@@ -81,51 +81,74 @@ class GraphViz:
         self.interpolation = interpolation # lin, dec, acc
         self.canvas_width = int(1200 * self.mag_factor)
         self.canvas_height = int(1200 * self.mag_factor)
-        self.palette_intense = ((0, 131, 182), (255, 75, 0), (32, 198, 0), (255, 84, 255),
-                               (111, 50, 25), (0, 204, 134), (255, 0, 138), (219, 168, 0),
-                               (150, 97, 180), (8, 91, 0), (0, 222, 255), (120, 191, 143),
-                               (0, 173, 255), (255, 126, 86), (34, 71, 68), (208, 164, 79),
-                               (243, 0, 176), (0, 97, 87), (0, 201, 255), (163, 120, 195),
-                               (0, 188, 0), (255, 86, 0), (0, 195, 246), (0, 97, 59),
-                               (177, 75, 75), (0, 152, 254), (204, 130, 0), (0, 174, 90),
-                               (221, 111, 255), (255, 52, 150), (129, 113, 26), (135, 157, 0),
-                               (0, 126, 147), (255, 48, 86), (66, 142, 22), (0, 177, 163),
-                               (50, 85, 124), (0, 175, 255), (199, 96, 31), (108, 134, 255),
-                               (253, 73, 214), (65, 162, 202), (169, 79, 128), (63, 172, 130),
-                               (202, 135, 186), (17, 181, 0), (0, 198, 255), (255, 78, 0),
-                               (0, 114, 88), (150, 100, 27), (204, 114, 255), (38, 100, 180),
-                              )
-        self.palette_gradient = ((215, 25, 28),
-                                 (223, 73, 62),
-                                 (223, 130, 102),
-                                 (244, 196, 149),
-                                 (254, 250, 187),
-                                 (212, 228, 189),
-                                 (150, 189, 186),
-                                 (85, 148, 183),
-                                 (52, 128, 182),
-                                 (36, 101, 150)
-                                )
-        self.color_palette = self.palette_intense
-        if palette == "gradient":
-            self.color_palette = self.palette_gradient
+        self.palette = palette
+        self.color_palettes={}
+        self.color_palettes['intense'] =  ((0, 131, 182), (255, 75, 0),
+                                           (32, 198, 0), (255, 84, 255),
+                                           (111, 50, 25), (0, 204, 134),
+                                           (255, 0, 138), (219, 168, 0),
+                                           (150, 97, 180), (8, 91, 0),
+                                           (0, 222, 255), (120, 191, 143),
+                                           (0, 173, 255), (255, 126, 86),
+                                           (34, 71, 68), (208, 164, 79),
+                                           (243, 0, 176), (0, 97, 87),
+                                           (0, 201, 255), (163, 120, 195),
+                                           (0, 188, 0), (255, 86, 0),
+                                           (0, 195, 246), (0, 97, 59),
+                                           (177, 75, 75), (0, 152, 254),
+                                           (204, 130, 0), (0, 174, 90),
+                                           (221, 111, 255), (255, 52, 150),
+                                           (129, 113, 26), (135, 157, 0),
+                                           (0, 126, 147), (255, 48, 86),
+                                           (66, 142, 22), (0, 177, 163),
+                                           (50, 85, 124), (0, 175, 255),
+                                           (199, 96, 31), (108, 134, 255),
+                                           (253, 73, 214), (65, 162, 202),
+                                           (169, 79, 128), (63, 172, 130),
+                                           (202, 135, 186), (17, 181, 0),
+                                           (0, 198, 255), (255, 78, 0),
+                                           (0, 114, 88), (150, 100, 27),
+                                           (204, 114, 255), (38, 100, 180))
+        self.color_palettes['gradient'] =   ((215, 25, 28),
+                                             (223, 73, 62),
+                                             (223, 130, 102),
+                                             (244, 196, 149),
+                                             (254, 250, 187),
+                                             (212, 228, 189),
+                                             (150, 189, 186),
+                                             (85, 148, 183),
+                                             (52, 128, 182),
+                                             (36, 101, 150))
+
+        if custom_palette is not None:
+            self.color_palettes['custom'] = custom_palette
+        self.color_palette = self.color_palettes['intense']
+        if self.palette in self.color_palettes:
+            self.color_palette = self.color_palettes[palette]
         self.pascal_memo = {}
         self.get_stats()
 
     def inter_from_mapping(self, mapping):
         inter = {}
         edge_labels = {}
+        edge_colors = {}
         for item in mapping:
             if len(item) == 3:
                 source, target, weight = item
             elif len(item) == 4:
                 source, target, weight, label = item
                 edge_labels[str(source)+":"+str(target)] = label
+            elif len(item) == 5:
+                source, target, weight, label, color = item
+                edge_labels[str(source)+":"+str(target)] = label
+                edge_colors[str(source)+":"+str(target)] = color
             if source not in inter:
                 inter[source] = Counter()
             inter[source][target] += weight
         if len(edge_labels) > 0:
             self.extra_vars["edge_labels"] = edge_labels
+        if len(edge_colors) > 0:
+            self.extra_vars["edge_colors"] = edge_colors
         return inter
 
     def inter_from_nx(self, nx):
@@ -343,16 +366,32 @@ class GraphViz:
                 clusters[mod] = []
             clusters[mod].append(node)
 
-        FA2 = ForceAtlas2(self.G,
-                          #outboundAttractionDistribution=self.dissuade_hubs,
-                          edgeWeightInfluence=self.edge_weight_influence,
-                          strongGravityMode=self.strong_gravity,
-                          scalingRatio=self.scaling,
-                          gravity=self.gravity,
-                          verbose=False)
-        pos = FA2.forceatlas2_networkx_layout(self.G,
-                                              pos=self.initial_pos,
-                                              iterations=self.iterations)
+        pos = None
+        print("Using layout: " + self.layout)
+        if self.layout == "FA2":
+            FA2 = ForceAtlas2(self.G,
+                              #outboundAttractionDistribution=self.dissuade_hubs,
+                              edgeWeightInfluence=self.edge_weight_influence,
+                              strongGravityMode=self.strong_gravity,
+                              scalingRatio=self.scaling,
+                              gravity=self.gravity,
+                              verbose=False)
+            pos = FA2.forceatlas2_networkx_layout(self.G,
+                                                  pos=self.initial_pos,
+                                                  iterations=self.iterations)
+        elif self.layout == "spring":
+            pos = nx.spring_layout(self.G,
+                                   scale=self.scaling,
+                                   iterations=self.iterations,
+                                   pos=self.initial_pos)
+        elif self.layout == "kamada_kawai":
+            pos = nx.kamada_kawai_layout(self.G,
+                                         scale=self.scaling,
+                                         pos=self.initial_pos)
+        elif self.layout == "spectral":
+            pos = nx.spectral_layout(self.G, scale=self.scaling)
+
+
         if self.auto_zoom == True:
             self.autozoom(pos)
 
@@ -627,14 +666,20 @@ class GraphViz:
         for source, targets in self.inter.items():
             for target, weight in targets.items():
                 w = self.set_edge_size(weight)
-                mod = self.extra_vars[self.color_by][source]
                 color = (128, 128, 128)
-                if self.palette == "intense":
-                    if mod < len(self.color_palette):
-                        color = self.color_palette[mod]
+                if 'edge_colors' in self.extra_vars:
+                    label = str(source)+":"+str(target)
+                    if label in self.extra_vars['edge_colors']:
+                        cnum = self.extra_vars['edge_colors'][label]
+                        color = self.color_palette[cnum]
                 else:
-                    gi = self.get_gradient_index(mod)
-                    color = self.color_palette[gi]
+                    mod = self.extra_vars[self.color_by][source]
+                    if self.palette != 'gradient':
+                        if mod < len(self.color_palette):
+                            color = self.color_palette[mod]
+                    else:
+                        gi = self.get_gradient_index(mod)
+                        color = self.color_palette[gi]
                 df = 0.25 + (self.eadjust * w)
                 color = self.adjust(color, df)
                 sp = self.positions[source]
@@ -649,7 +694,7 @@ class GraphViz:
                 s = 1
             mod = self.extra_vars[self.color_by][sn]
             color = (128, 128, 128)
-            if self.palette == "intense":
+            if self.palette != "gradient":
                 if mod < len(self.color_palette):
                     color = self.color_palette[mod]
             else:
@@ -694,7 +739,8 @@ class GraphViz:
                                                 color=(128,128,128), fnt=self.alt_font)
                             else:
                                 self.draw_multiline_label(xpos, ypos, text, font_size,
-                                                          color=(128,128,128), fnt=self.alt_font)
+                                                          color=(128,128,128),
+                                                          fnt=self.alt_font)
 
         # Draw info boxes
         if self.modularity_legend is not None:
@@ -813,7 +859,4 @@ class GraphViz:
 
 # Add support for info box pointing to node
 # Add support for "bold" nodes
-# Add support for custom color pallette
-# Add support for additional edge attributes (e.g. color)
-# Add the other "glowy" node representation
-
+# Add support for other layouts
