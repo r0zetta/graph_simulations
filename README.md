@@ -82,7 +82,13 @@ This mode can also be used to add specific edge colors. Just prepare the data in
 ```
 [[s, t, w, l, c], [s, t, w, l, c], ..., [s, t, w, l, c]]
 ```
-Where _s_ is source, _t_ is target, _w_ is weight, _l_ is the label, and _c_ is the color. Edge colors are stored in the GraphViz object as extra_vars['edge_colors'].
+Where _s_ is source, _t_ is target, _w_ is weight, _l_ is the label, and _c_ is the color. Edge colors are stored in the GraphViz object as extra_vars['edge_colors']. Note that the color specified in this field should correspond with an index in a defined color palette, not an actual RGB color tuple.
+
+Finally, this mode can also be used to add specific edge styles. Just prepare the data in the following format:
+```
+[[s, t, w, l, c, y], [s, t, w, l, c, y], ..., [s, t, w, l, c, y]]
+```
+Where _s_ is source, _t_ is target, _w_ is weight, _l_ is the label, _c_ is the color, and _y_ is the style. Edge styles include "normal" (a full line), "dashed" and "dotted" (broken lines). These styles only work in "normal" mode - the "glowy" edges used in "sphere" and "glowy" modes override individually defined edge styles.
 
 3. Initialize a GraphViz object using from_nx=nx. This takes a networkx object as input.
 
