@@ -494,7 +494,7 @@ class GraphViz:
         flat_dist += self.distance(control_points[0], control_points[1])
         flat_dist += self.distance(control_points[1], p2)
         curved_dist = flat_dist * 1.2
-        num_steps = int(curved_dist)
+        num_steps = max(10, int(curved_dist))
         points = self.make_bezier(control_points, num_steps)
         return points
 
@@ -607,7 +607,7 @@ class GraphViz:
         self.draw_arrow_head(arrow_tip, arrow_angle, w, c)
 
     def draw_arrow_head(self, arrow_tip, arrow_angle, line_width, color):
-        arrow_size = 20 + ((1-line_width*2))
+        arrow_size = int((10 + line_width) * self.mag_factor)
         a1 = arrow_tip
         a2 = self.move_point(a1, arrow_size, arrow_angle+2.75)
         a3 = self.move_point(a1, arrow_size, arrow_angle-2.75)
@@ -869,6 +869,7 @@ class GraphViz:
                 tp = self.positions[target]
                 target_node_size = self.extra_vars[self.size_by][target]
                 target_node_size = self.set_node_size(target_node_size)
+                target_node_size = target_node_size * self.mag_factor
                 self.draw_edge(sp, tp, w, color, style, target_node_size)
 
         # Draw nodes
@@ -1048,5 +1049,3 @@ class GraphViz:
 
 
 # Add support for info box pointing to node
-# Add support for arrow heads
-# Add support for dashed and dotted lines
