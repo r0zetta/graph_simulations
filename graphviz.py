@@ -162,6 +162,8 @@ class GraphViz:
             self.extra_vars["edge_labels"] = edge_labels
         if len(edge_colors) > 0:
             self.extra_vars["edge_colors"] = edge_colors
+        if len(edge_styles) > 0:
+            self.extra_vars["edge_styles"] = edge_styles
         return inter
 
     def inter_from_nx(self, nx):
@@ -485,22 +487,25 @@ class GraphViz:
                 return x
             cv += step_size
 
-    def draw_arrow_head(self, arrow_tip, arrow_angle, line_width, color):
-        arrow_size = 20 + ((1-line_width*2))
-        a1 = arrow_tip
-        a2 = self.move_point(a1, arrow_size, arrow_angle+2.75)
-        a3 = self.move_point(a1, arrow_size, arrow_angle-2.75)
-        self.draw.polygon([a1, a2, a3], fill=color, outline=None)
+    def get_curve(self, p1, p2):
+        control_points = self.get_control_points(p1, p2)
+        flat_dist = 0
+        flat_dist += self.distance(p1, control_points[0])
+        flat_dist += self.distance(control_points[0], control_points[1])
+        flat_dist += self.distance(control_points[1], p2)
+        curved_dist = flat_dist * 1.2
+        num_steps = int(curved_dist)
+        points = self.make_bezier(control_points, num_steps)
+        return points
 
     def draw_edge_curved(self, p1, p2, w, color, ns):
-        control_points = self.get_control_points(p1, p2)
-        points = self.make_bezier(control_points, 100)
+        points = self.get_curve(p1, p2)
         steps = len(points)
         arrow_tip = None
         arrow_angle = None
         for index in range(steps-1):
-            x1, y1 = points[index]
-            x2, y2 = points[index+1]
+            pp1 = points[index]
+            pp2 = points[index+1]
             if self.graph_style == "glowy":
                 adjust = 1.0
                 if index <=(steps/2):
@@ -511,12 +516,38 @@ class GraphViz:
                 c = tuple([min(255, int(x * adjust)) for x in color])
             else:
                 c = color
-            self.draw.line((x1, y1, x2, y2), fill=c, width=w)
+            self.draw.line([pp1, pp2], fill=c, width=w)
             if arrow_tip is None:
-                if self.distance((x2, y2), p2) <= ns:
-                    arrow_tip = (x2, y2)
-                    arrow_angle = self.angle((x2, y2), p2)
+                if self.distance(pp2, p2) <= ns:
+                    arrow_tip = pp2
+                    arrow_angle = self.angle(pp2, p2)
         self.draw_arrow_head(arrow_tip, arrow_angle, w, color)
+
+    def draw_edge_curved_dashed(self, p1, p2, c, w, ns, dash_len, space_len):
+        points = self.get_curve(p1, p2)
+        arrow_tip = None
+        arrow_angle = None
+        dash_on = True
+        i = 0
+        pp1 = points[0]
+        while i < len(points):
+            if dash_on == True:
+                i = i + dash_len
+                if i < len(points):
+                    pp2 = points[i]
+                    self.draw.line([pp1, pp2], fill=c, width=w)
+                    dash_on = False
+            else:
+                i = i + space_len
+                if i < len(points):
+                    pp2 = points[i]
+                    dash_on = True
+            pp1 = pp2
+            if arrow_tip is None:
+                if self.distance(pp1, p2) <= ns:
+                    arrow_tip = pp1
+                    arrow_angle = self.angle(pp1, p2)
+        self.draw_arrow_head(arrow_tip, arrow_angle, w, c)
 
     def draw_edge_straight_glowy(self, p1, p2, width, color, steps):
         sd = self.distance(p1, p2) * (1/steps)
@@ -536,7 +567,27 @@ class GraphViz:
             self.draw.line((x1, y1, x2, y2), fill=c, width=width)
             p = new_p
 
-    def draw_edge_straight(self, p1, p2, w, c, ns):
+    def draw_edge_straight_dashed(self, p1, p2, color, w, dash_len, space_len):
+        dis = self.distance(p1, p2)
+        ang = self.angle(p1, p2)
+        dash_on = True
+        pp = p1
+        dm = 0
+        while dm <= dis:
+            if dash_on == True:
+                np = self.move_point(pp, dash_len, ang)
+                x1, y1 = pp
+                x2, y2 = np
+                self.draw.line((x1, y1, x2, y2), fill=color, width=w)
+                dash_on = False
+                dm += dash_len
+            else:
+                np = self.move_point(pp, space_len, ang)
+                dash_on = True
+                dm += space_len
+            pp = np
+
+    def draw_edge_straight(self, p1, p2, w, c, style, ns):
         dis = self.distance(p1, p2)
         ang = self.angle(p1, p2)
         dest_dist = dis - ns
@@ -545,16 +596,33 @@ class GraphViz:
         if self.graph_style in ["glowy", "sphere"]:
             self.draw_edge_straight_glowy(p1, p2, w, c, 20)
         else:
-            x1, y1 = p1
-            x2, y2 = p2
-            self.draw.line((x1, y1, x2, y2), fill=c, width=w)
+            if style == "normal":
+                x1, y1 = p1
+                x2, y2 = p2
+                self.draw.line((x1, y1, x2, y2), fill=c, width=w)
+            elif style == "dashed":
+                self.draw_edge_straight_dashed(p1, p2, c, w, 5, 5)
+            elif style == "dotted":
+                self.draw_edge_straight_dashed(p1, p2, c, w, 1, 5)
         self.draw_arrow_head(arrow_tip, arrow_angle, w, c)
 
-    def draw_edge(self, p1, p2, w, c, ns):
+    def draw_arrow_head(self, arrow_tip, arrow_angle, line_width, color):
+        arrow_size = 20 + ((1-line_width*2))
+        a1 = arrow_tip
+        a2 = self.move_point(a1, arrow_size, arrow_angle+2.75)
+        a3 = self.move_point(a1, arrow_size, arrow_angle-2.75)
+        self.draw.polygon([a1, a2, a3], fill=color, outline=None)
+
+    def draw_edge(self, p1, p2, w, c, style, ns):
         if self.edge_style == "curved":
-            self.draw_edge_curved(p1, p2, w, c, ns)
+            if style == "normal":
+                self.draw_edge_curved(p1, p2, w, c, ns)
+            elif style == "dashed":
+                self.draw_edge_curved_dashed(p1, p2, c, w, ns, 8, 5)
+            elif style == "dotted":
+                self.draw_edge_curved_dashed(p1, p2, c, w, ns, 1, 6)
         else:
-            self.draw_edge_straight(p1, p2, w, c, ns)
+            self.draw_edge_straight(p1, p2, w, c, style, ns)
 
     def draw_circle_normal(self, x, y, radius, color, bold=False):
         s = radius
@@ -778,8 +846,8 @@ class GraphViz:
             for target, weight in targets.items():
                 w = self.set_edge_size(weight)
                 color = (128, 128, 128)
+                label = str(source)+":"+str(target)
                 if 'edge_colors' in self.extra_vars:
-                    label = str(source)+":"+str(target)
                     if label in self.extra_vars['edge_colors']:
                         cnum = self.extra_vars['edge_colors'][label]
                         color = self.color_palette[cnum]
@@ -791,13 +859,17 @@ class GraphViz:
                     else:
                         gi = self.get_gradient_index(mod)
                         color = self.color_palette[gi]
+                style = "normal"
+                if 'edge_styles' in self.extra_vars:
+                    if label in self.extra_vars['edge_styles']:
+                        style = self.extra_vars['edge_styles'][label]
                 df = 0.25 + (self.eadjust * w)
                 color = self.adjust(color, df)
                 sp = self.positions[source]
                 tp = self.positions[target]
                 target_node_size = self.extra_vars[self.size_by][target]
                 target_node_size = self.set_node_size(target_node_size)
-                self.draw_edge(sp, tp, w, color, target_node_size)
+                self.draw_edge(sp, tp, w, color, style, target_node_size)
 
         # Draw nodes
         for sn, coords in self.positions.items():
