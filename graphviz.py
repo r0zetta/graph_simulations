@@ -18,7 +18,7 @@ class GraphViz:
                  min_node_size=5, max_node_size=20, node_scaling="lin",
                  min_edge_size=1, max_edge_size=5, edge_scaling="lin",
                  background_mode="black", edge_style="curved", graph_style="normal",
-                 palette="intense", color_by="modularity", size_by="out_degree",
+                 palette="intense", color_by="modularity", shape_by=None, size_by="out_degree",
                  labels="nodeid", max_label_len=50, interpolation="lin"):
         self.extra_vars = extra_vars
         if self.extra_vars is None:
@@ -77,6 +77,7 @@ class GraphViz:
         self.labels = labels
         self.max_label_len = max_label_len
         self.color_by = color_by
+        self.shape_by = shape_by
         self.size_by = size_by
         self.interpolation = interpolation # lin, dec, acc
         self.canvas_width = int(1200 * self.mag_factor)
@@ -493,12 +494,12 @@ class GraphViz:
                 c = color
             self.draw.line((x1, y1, x2, y2), fill=c, width=w)
 
-    def draw_glowy_line(self, p1, p2, width, color, steps):
-        sd = distance(p1, p2) * (1/steps)
-        ang = angle(p1, p2)
+    def draw_edge_straight_glowy(self, p1, p2, width, color, steps):
+        sd = self.distance(p1, p2) * (1/steps)
+        ang = self.angle(p1, p2)
         p = p1
         for n in range(steps):
-            new_p = move_point(p, sd, ang)
+            new_p = self.move_point(p, sd, ang)
             adjust = 1.0
             if n <=(steps/2):
                 adjust = (n+1)/(steps/2)
@@ -508,12 +509,12 @@ class GraphViz:
             c = tuple([min(255, int(x * adjust)) for x in color])
             x1, y1 = p
             x2, y2 = new_p
-            draw.line((x1, y1, x2, y2), fill=c, width=width)
+            self.draw.line((x1, y1, x2, y2), fill=c, width=width)
             p = new_p
 
     def draw_edge_straight(self, p1, p2, w, c):
         if self.graph_style in ["glowy", "sphere"]:
-            self.draw_glowy_line(p1, p2, w, c, 20)
+            self.draw_edge_straight_glowy(p1, p2, w, c, 20)
         else:
             x1, y1 = p1
             x2, y2 = p2
@@ -525,27 +526,100 @@ class GraphViz:
         else:
             self.draw_edge_straight(p1, p2, w, c)
 
-    def draw_node_sphere(self, x, y, radius, color):
+    def draw_circle_normal(self, x, y, radius, color):
+        s = radius
+        c = color
+        self.draw.ellipse((x-s, y-s, x+s, y+s), fill=c, outline=self.node_outline)
+
+    def draw_circle_sphere(self, x, y, radius, color):
         for n in range(10):
             r = radius * ((11-n)/10)
             c = tuple([min(255, int(z * (n+1)/5)) for z in color])
             self.draw.ellipse((x-r, y-r, x+r, y+r), fill=c)
 
-    def draw_node_glowy(self, x, y, radius, color):
+    def draw_circle_glowy(self, x, y, radius, color):
         for n in range(10):
             r = radius * ((11-n)/10)
             #c = tuple([min(255, int(z * ((6-n)/10))) for z in color])
             c = tuple([min(255, int(z * (1/(n+1)))) for z in color])
             self.draw.ellipse((x-r, y-r, x+r, y+r), fill=c)
 
-    def draw_node(self, x, y, s, c):
-        s = int(s * self.mag_factor)
+    def draw_diamond_normal(self, x, y, radius, color):
+        self.draw.regular_polygon(bounding_circle=(x, y, radius),
+                                  n_sides=4,
+                                  rotation=45,
+                                  fill=color,
+                                  outline=self.node_outline)
+
+    def draw_diamond_sphere(self, x, y, radius, color):
+        for n in range(10):
+            r = radius * ((11-n)/10)
+            c = tuple([min(255, int(z * (n+1)/5)) for z in color])
+            self.draw.regular_polygon(bounding_circle=(x, y, r),
+                                      n_sides=4, rotation=45, fill=c)
+
+    def draw_diamond_glowy(self, x, y, radius, color):
+        for n in range(10):
+            r = radius * ((11-n)/10)
+            c = tuple([min(255, int(z * (1/(n+1)))) for z in color])
+            self.draw.regular_polygon(bounding_circle=(x, y, r),
+                                      n_sides=4, rotation=45, fill=c)
+
+    def draw_square_normal(self, x, y, radius, color):
+        self.draw.regular_polygon(bounding_circle=(x, y, radius),
+                                  n_sides=4,
+                                  rotation=0,
+                                  fill=color,
+                                  outline=self.node_outline)
+
+    def draw_square_sphere(self, x, y, radius, color):
+        for n in range(10):
+            r = radius * ((11-n)/10)
+            c = tuple([min(255, int(z * (n+1)/5)) for z in color])
+            self.draw.regular_polygon(bounding_circle=(x, y, r),
+                                      n_sides=4, rotation=0, fill=c)
+
+    def draw_square_glowy(self, x, y, radius, color):
+        for n in range(10):
+            r = radius * ((11-n)/10)
+            c = tuple([min(255, int(z * (1/(n+1)))) for z in color])
+            self.draw.regular_polygon(bounding_circle=(x, y, r),
+                                      n_sides=4, rotation=0, fill=c)
+
+    def draw_circle(self, x, y, s, c):
         if self.graph_style == "glowy":
-            self.draw_node_glowy(x, y, s, c)
+            self.draw_circle_glowy(x, y, s, c)
         elif self.graph_style == "sphere":
-            self.draw_node_sphere(x, y, s, c)
+            self.draw_circle_sphere(x, y, s, c)
         else:
-            self.draw.ellipse((x-s, y-s, x+s, y+s), fill=c, outline=self.node_outline)
+            self.draw_circle_normal(x, y, s, c)
+
+    def draw_square(self, x, y, s, c):
+        s = 1.5 * s
+        if self.graph_style == "glowy":
+            self.draw_square_glowy(x, y, s, c)
+        elif self.graph_style == "sphere":
+            self.draw_square_sphere(x, y, s, c)
+        else:
+            self.draw_square_normal(x, y, s, c)
+
+    def draw_diamond(self, x, y, s, c):
+        s = 1.5 * s
+        if self.graph_style == "glowy":
+            self.draw_diamond_glowy(x, y, s, c)
+        elif self.graph_style == "sphere":
+            self.draw_diamond_sphere(x, y, s, c)
+        else:
+            self.draw_diamond_normal(x, y, s, c)
+
+    def draw_node(self, x, y, s, c, shape):
+        s = int(s * self.mag_factor)
+        if shape == "diamond":
+            self.draw_diamond(x, y, s, c)
+        elif shape == "square":
+            self.draw_square(x, y, s, c)
+        else:
+            self.draw_circle(x, y, s, c)
 
     def draw_label(self, x, y, label, s, color=None, fnt=None):
         fill = self.font_color
@@ -689,6 +763,11 @@ class GraphViz:
         # Draw nodes
         for sn, coords in self.positions.items():
             xpos, ypos = coords
+            shape = "circle"
+            if self.shape_by is not None:
+                if self.shape_by in self.extra_vars:
+                    if sn in self.extra_vars[self.shape_by]:
+                        shape = self.extra_vars[self.shape_by][sn]
             s = self.extra_vars[self.size_by][sn]
             if s < 1:
                 s = 1
@@ -701,7 +780,7 @@ class GraphViz:
                 gi = self.get_gradient_index(mod)
                 color = self.color_palette[gi]
             node_size = self.set_node_size(s)
-            self.draw_node(xpos, ypos, node_size, color)
+            self.draw_node(xpos, ypos, node_size, color, shape)
 
         # Draw node labels
         for sn, coords in self.positions.items():
@@ -859,4 +938,4 @@ class GraphViz:
 
 # Add support for info box pointing to node
 # Add support for "bold" nodes
-# Add support for other layouts
+# Add support for arrow heads
