@@ -20,12 +20,11 @@ def load_slice(start_index, length, filename):
 
 def get_stats(current_ind, slice_len, filename, view):
     raw = load_slice(current_ind, slice_len, filename)
-    ts = raw[-1]['created_at']
     full = get_counters_and_interactions2(raw)
     inter = full[view]
-    return inter, ts
+    return inter
 
-def get_point_in_cluster(nodeid, inter, positions):
+def get_points_in_cluster(nodeids, inter, positions):
     mapping = []
     for source, targets in inter.items():
         for target, count in targets.items():
@@ -40,44 +39,43 @@ def get_point_in_cluster(nodeid, inter, positions):
             communities[mod] = []
         communities[mod].append(name)
 
-    xval, yval = random.sample(range(50, 1500), 2)
-    if nodeid not in clusters:
-        return xval, yval
-
-    mod = clusters[nodeid]
-    members = communities[mod]
-    if len(members) < 1:
-        return xval, yval
-
-    xpos = []
-    ypos = []
-    for member in members:
-        if member in positions:
-            x, y = positions[member]
-            xpos.append(x)
-            ypos.append(y)
-    if len(xpos) < 1 or len(ypos) < 1:
-        return xval, yval
-    xmin = min(xpos)
-    xmax = max(xpos)
-    ymin = min(ypos)
-    ymax = max(ypos)
-    xval = (xmax-xmin) / 2
-    yval = (ymax-ymin) / 2
-    return xval, yval
+    cpos = {}
+    for nodeid in nodeids:
+        xval, yval = random.sample(range(50, 1500), 2)
+        if nodeid in clusters:
+            mod = clusters[nodeid]
+            members = communities[mod]
+            if len(members) > 0:
+                xpos = []
+                ypos = []
+                for member in members:
+                    if member in positions:
+                        x, y = positions[member]
+                        xpos.append(x)
+                        ypos.append(y)
+                if len(xpos) > 0 and len(ypos) > 0:
+                    xmin = min(xpos)
+                    xmax = max(xpos)
+                    ymin = min(ypos)
+                    ymax = max(ypos)
+                    xval = (xmax-xmin) / 2
+                    yval = (ymax-ymin) / 2
+        cpos[nodeid] = [xval, yval]
+    return cpos
 
 
-target = "23istandwithrussia"
+target = "QPR"
 filename = "../twitter_analysis/" + target + "/data/raw.json"
 savedir = "frames" + target
 if not os.path.exists(savedir):
     os.makedirs(savedir)
 
 view = "sn_rsn"
+num_steps = 5
 
-slice_len = 5000
-ind_inc = 100
-num_slices = 360
+slice_len = 2000
+ind_inc = 500
+num_slices = 10
 
 current_ind = 0
 
@@ -86,7 +84,7 @@ pos = None
 
 for n in range(num_slices):
     print("Getting slice " + str(n) + " / " + str(num_slices))
-    inter, ts = get_stats(current_ind, slice_len, filename, view)
+    inter = get_stats(current_ind, slice_len, filename, view)
     nodeids = set()
     for source, targets in inter.items():
         nodeids.add(source)
@@ -97,36 +95,36 @@ for n in range(num_slices):
     # Assign random positions for new nodes
     if pos is not None:
         new_pos = {}
+        to_get = []
         for nodeid in nodeids:
             if nodeid in pos:
                 new_pos[nodeid] = pos[nodeid]
             else:
-                # Assign the point to a location roughly within the node's cluster
-                x, y = get_point_in_cluster(nodeid, inter, pos)
-                new_pos[nodeid] = [x, y]
+                to_get.append(nodeid)
+        if len(to_get) > 0:
+            cpos = get_points_in_cluster(to_get, inter, pos)
+            for x, c in cpos.items():
+                new_pos[x] = c
         pos = dict(new_pos)
 
-    info = [[ts, "bottomleft", 48]]
     current_ind += ind_inc
     #print("Calculating layout")
     gv = GraphViz(from_dict=inter,
                   initial_pos=pos,
-                  iterations=70,
-                  info=info,
-                  mag_factor=0.5,
+                  mag_factor=1.0,
                   graph_style="glowy",
-                  scaling=120,
-                  gravity=2,
+                  scaling=40,
+                  gravity=5,
                   min_font_size=1,
-                  max_font_size=80,
+                  max_font_size=60,
                   min_node_size=10,
-                  max_node_size=30,
+                  max_node_size=20,
                   min_edge_size=1,
                   max_edge_size=5,
                   size_by="in_degree",
-                  font_scaling="root1.8",
-                  auto_zoom=True,
-                  expand=1.2)
+                  font_scaling="root2.5",
+                  auto_zoom=False,
+                  expand=0.5)
     pos = gv.positions
     #print("Making image")
     #im = gv.make_graphviz()
@@ -134,11 +132,9 @@ for n in range(num_slices):
     #sys.exit(0)
     glist.append(gv)
 
-num_steps = 5
 gv0 = glist[0]
 gv0.interpolate_multiple(glist, savedir, num_steps=num_steps)
 num_frames = min(1800, num_slices*num_steps)
 image_files = [savedir + "/frame" + "%05d"%x + ".png" for x in range(num_frames)]
 clip = moviepy.video.io.ImageSequenceClip.ImageSequenceClip(image_files, fps=20)
 clip.write_videofile("timelapse_" + target + ".mp4")
-
