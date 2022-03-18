@@ -133,16 +133,28 @@ class GraphViz:
         inter = {}
         edge_labels = {}
         edge_colors = {}
+        edge_styles = {}
         for item in mapping:
             if len(item) == 3:
                 source, target, weight = item
             elif len(item) == 4:
                 source, target, weight, label = item
-                edge_labels[str(source)+":"+str(target)] = label
+                if label is not None:
+                    edge_labels[str(source)+":"+str(target)] = label
             elif len(item) == 5:
                 source, target, weight, label, color = item
-                edge_labels[str(source)+":"+str(target)] = label
-                edge_colors[str(source)+":"+str(target)] = color
+                if label is not None:
+                    edge_labels[str(source)+":"+str(target)] = label
+                if color is not None:
+                    edge_colors[str(source)+":"+str(target)] = color
+            elif len(item) == 6:
+                source, target, weight, label, color, style = item
+                if label is not None:
+                    edge_labels[str(source)+":"+str(target)] = label
+                if color is not None:
+                    edge_colors[str(source)+":"+str(target)] = color
+                if style is not None:
+                    edge_styles[str(source)+":"+str(target)] = style
             if source not in inter:
                 inter[source] = Counter()
             inter[source][target] += weight
@@ -473,15 +485,22 @@ class GraphViz:
                 return x
             cv += step_size
 
-    def draw_edge_curved(self, p1, p2, w, color):
+    def draw_arrow_head(self, arrow_tip, arrow_angle, line_width, color):
+        arrow_size = 20 + ((1-line_width*2))
+        a1 = arrow_tip
+        a2 = self.move_point(a1, arrow_size, arrow_angle+2.75)
+        a3 = self.move_point(a1, arrow_size, arrow_angle-2.75)
+        self.draw.polygon([a1, a2, a3], fill=color, outline=None)
+
+    def draw_edge_curved(self, p1, p2, w, color, ns):
         control_points = self.get_control_points(p1, p2)
         points = self.make_bezier(control_points, 100)
         steps = len(points)
+        arrow_tip = None
+        arrow_angle = None
         for index in range(steps-1):
-            x1 = points[index][0]
-            y1 = points[index][1]
-            x2 = points[index+1][0]
-            y2 = points[index+1][1]
+            x1, y1 = points[index]
+            x2, y2 = points[index+1]
             if self.graph_style == "glowy":
                 adjust = 1.0
                 if index <=(steps/2):
@@ -493,6 +512,11 @@ class GraphViz:
             else:
                 c = color
             self.draw.line((x1, y1, x2, y2), fill=c, width=w)
+            if arrow_tip is None:
+                if self.distance((x2, y2), p2) <= ns:
+                    arrow_tip = (x2, y2)
+                    arrow_angle = self.angle((x2, y2), p2)
+        self.draw_arrow_head(arrow_tip, arrow_angle, w, color)
 
     def draw_edge_straight_glowy(self, p1, p2, width, color, steps):
         sd = self.distance(p1, p2) * (1/steps)
@@ -512,24 +536,34 @@ class GraphViz:
             self.draw.line((x1, y1, x2, y2), fill=c, width=width)
             p = new_p
 
-    def draw_edge_straight(self, p1, p2, w, c):
+    def draw_edge_straight(self, p1, p2, w, c, ns):
+        dis = self.distance(p1, p2)
+        ang = self.angle(p1, p2)
+        dest_dist = dis - ns
+        arrow_tip = self.move_point(p1, dest_dist, ang)
+        arrow_angle = ang
         if self.graph_style in ["glowy", "sphere"]:
             self.draw_edge_straight_glowy(p1, p2, w, c, 20)
         else:
             x1, y1 = p1
             x2, y2 = p2
             self.draw.line((x1, y1, x2, y2), fill=c, width=w)
+        self.draw_arrow_head(arrow_tip, arrow_angle, w, c)
 
-    def draw_edge(self, p1, p2, w, c):
+    def draw_edge(self, p1, p2, w, c, ns):
         if self.edge_style == "curved":
-            self.draw_edge_curved(p1, p2, w, c)
+            self.draw_edge_curved(p1, p2, w, c, ns)
         else:
-            self.draw_edge_straight(p1, p2, w, c)
+            self.draw_edge_straight(p1, p2, w, c, ns)
 
-    def draw_circle_normal(self, x, y, radius, color):
+    def draw_circle_normal(self, x, y, radius, color, bold=False):
         s = radius
         c = color
-        self.draw.ellipse((x-s, y-s, x+s, y+s), fill=c, outline=self.node_outline)
+        width = 1
+        if bold == True:
+            width = 5
+        self.draw.ellipse((x-s, y-s, x+s, y+s),
+                          fill=c, outline=self.node_outline, width=width)
 
     def draw_circle_sphere(self, x, y, radius, color):
         for n in range(10):
@@ -586,13 +620,13 @@ class GraphViz:
             self.draw.regular_polygon(bounding_circle=(x, y, r),
                                       n_sides=4, rotation=0, fill=c)
 
-    def draw_circle(self, x, y, s, c):
+    def draw_circle(self, x, y, s, c, bold=False):
         if self.graph_style == "glowy":
             self.draw_circle_glowy(x, y, s, c)
         elif self.graph_style == "sphere":
             self.draw_circle_sphere(x, y, s, c)
         else:
-            self.draw_circle_normal(x, y, s, c)
+            self.draw_circle_normal(x, y, s, c, bold)
 
     def draw_square(self, x, y, s, c):
         s = 1.5 * s
@@ -614,12 +648,15 @@ class GraphViz:
 
     def draw_node(self, x, y, s, c, shape):
         s = int(s * self.mag_factor)
-        if shape == "diamond":
+        if "diamond" in shape:
             self.draw_diamond(x, y, s, c)
-        elif shape == "square":
+        elif "square" in shape:
             self.draw_square(x, y, s, c)
         else:
-            self.draw_circle(x, y, s, c)
+            bold = False
+            if "bold" in shape:
+                bold = True
+            self.draw_circle(x, y, s, c, bold=bold)
 
     def draw_label(self, x, y, label, s, color=None, fnt=None):
         fill = self.font_color
@@ -758,7 +795,9 @@ class GraphViz:
                 color = self.adjust(color, df)
                 sp = self.positions[source]
                 tp = self.positions[target]
-                self.draw_edge(sp, tp, w, color)
+                target_node_size = self.extra_vars[self.size_by][target]
+                target_node_size = self.set_node_size(target_node_size)
+                self.draw_edge(sp, tp, w, color, target_node_size)
 
         # Draw nodes
         for sn, coords in self.positions.items():
@@ -937,5 +976,5 @@ class GraphViz:
 
 
 # Add support for info box pointing to node
-# Add support for "bold" nodes
 # Add support for arrow heads
+# Add support for dashed and dotted lines
