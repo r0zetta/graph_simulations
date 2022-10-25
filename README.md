@@ -30,7 +30,7 @@ display(im) # If running in a jupyter notebook
 
 I have been using gephi (https://gephi.org/) for many years to visualize node-edge graphs in an appealing and eye-catching manner. Even though the tool is straighforward to use and contains many useful features, I have always wished for a programmatic method to generate similarly visually appealing graph plots. Unfortunately, currently available tools either cost money or aren't capable or generating visualizations nearly as nice looking as those created by gephi. With this in mind, I decided to create a tool capable of generating graph visualizations similar to those that gephi outputs. That tool is graphviz.py.
 
-An graph visualiztion generated with graphviz.py looks like this:
+A graph visualiztion generated with graphviz.py looks like this:
 ![generated_3_gv](media/generated_3_gv.png)
 
 Here is an example of a visualization generated from captured Twitter data using **background_mode** = "white"
